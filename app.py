@@ -3,29 +3,21 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import joblib
 
-
-# ============================================================
+# =========================
 # LOAD MODEL
-# ============================================================
-
+# =========================
 model = joblib.load("svm_model.pkl")
 
-
-# ============================================================
-# FASTAPI
-# ============================================================
-
 app = FastAPI(
-    title="Iris Classification API",
-    description="Iris Flower Classification using SVM",
-    version="1.0.0"
+    title="Iris AI Classification",
+    description="Iris flower classification using Support Vector Machine",
+    version="2.0.0"
 )
 
 
-# ============================================================
+# =========================
 # INPUT MODEL
-# ============================================================
-
+# =========================
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
@@ -33,1238 +25,1110 @@ class IrisInput(BaseModel):
     petal_width: float
 
 
-# ============================================================
-# SPECIES
-# ============================================================
-
 species = {
-    0: "Setosa",
-    1: "Versicolor",
-    2: "Virginica"
+    0: "Iris Setosa",
+    1: "Iris Versicolor",
+    2: "Iris Virginica"
 }
 
 
-# ============================================================
-# IMAGE
-# ============================================================
-
-flower_images = {
-    "Setosa":
-        "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG",
-
-    "Versicolor":
-        "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg",
-
-    "Virginica":
-        "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg"
-}
-
-
-# ============================================================
-# HOME
-# ============================================================
-
+# =========================
+# HOME PAGE
+# =========================
 @app.get("/", response_class=HTMLResponse)
 def home():
 
     return """
 <!DOCTYPE html>
-
 <html lang="vi">
 
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
-
-<title>Iris Flower Classification</title>
-
+<title>Iris AI Classification</title>
 
 <style>
 
-/* =========================================================
-   RESET
-========================================================= */
+/* =====================================================
+   GLOBAL
+===================================================== */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-body {
+:root{
+    --bg:#070b17;
+    --panel:rgba(17,24,39,.72);
+    --panel2:rgba(255,255,255,.055);
+    --border:rgba(255,255,255,.10);
+
+    --text:#f8fafc;
+    --muted:#94a3b8;
+
+    --primary:#8b5cf6;
+    --secondary:#06b6d4;
+    --success:#22c55e;
+
+    --shadow:
+        0 25px 80px rgba(0,0,0,.45);
+}
+
+body{
+
+    min-height:100vh;
 
     font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
         "Segoe UI",
-        Arial,
         sans-serif;
 
-    min-height: 100vh;
-
-    color: #172554;
+    color:var(--text);
 
     background:
-        linear-gradient(
-            135deg,
-            #eef2ff 0%,
-            #f8fafc 45%,
-            #e0f2fe 100%
-        );
 
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(139,92,246,.22),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(6,182,212,.16),
+            transparent 30%
+        ),
+
+        var(--bg);
+
+    overflow-x:hidden;
 }
 
 
-/* =========================================================
-   NAVBAR
-========================================================= */
+/* =====================================================
+   BACKGROUND PARTICLES
+===================================================== */
 
-.navbar {
+.background{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+}
 
-    height: 70px;
+.orb{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(80px);
+    opacity:.35;
+    animation:float 10s ease-in-out infinite;
+}
 
-    background:
-        linear-gradient(
-            100deg,
-            #172554,
-            #312e81,
-            #1e3a8a
-        );
+.orb.one{
+    width:300px;
+    height:300px;
+    background:#7c3aed;
+    top:-100px;
+    left:-100px;
+}
 
-    display: flex;
+.orb.two{
+    width:260px;
+    height:260px;
+    background:#0891b2;
+    right:-80px;
+    bottom:-80px;
+    animation-delay:2s;
+}
 
-    align-items: center;
+@keyframes float{
 
-    padding: 0 6%;
+    0%,100%{
+        transform:translate(0,0);
+    }
 
-    color: white;
-
-    box-shadow:
-        0 5px 25px
-        rgba(15,23,42,0.18);
-
+    50%{
+        transform:translate(25px,-20px);
+    }
 }
 
 
-.logo {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    font-size: 22px;
-
-    font-weight: 800;
-
-    margin-right: 60px;
-
-}
-
-
-.logo-flower {
-
-    width: 42px;
-
-    height: 42px;
-
-    border-radius: 12px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background:
-        rgba(255,255,255,0.15);
-
-    font-size: 25px;
-
-}
-
-
-.nav-links {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-}
-
-
-.nav-link {
-
-    color:
-        rgba(255,255,255,0.85);
-
-    text-decoration: none;
-
-    padding: 10px 18px;
-
-    border-radius: 25px;
-
-    font-size: 14px;
-
-    transition: 0.2s;
-
-}
-
-
-.nav-link:hover {
-
-    background:
-        rgba(255,255,255,0.12);
-
-    color: white;
-
-}
-
-
-.nav-link.active {
-
-    background:
-        rgba(255,255,255,0.16);
-
-    color: white;
-
-}
-
-
-.api-status {
-
-    margin-left: auto;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    padding: 8px 15px;
-
-    border-radius: 25px;
-
-    background:
-        rgba(52,211,153,0.15);
-
-    color: #d1fae5;
-
-    font-size: 13px;
-
-    font-weight: 600;
-
-}
-
-
-.status-dot {
-
-    width: 9px;
-
-    height: 9px;
-
-    background: #34d399;
-
-    border-radius: 50%;
-
-    box-shadow:
-        0 0 10px #34d399;
-
-}
-
-
-/* =========================================================
-   HERO
-========================================================= */
-
-.hero {
-
-    position: relative;
-
-    padding: 45px 20px 30px;
-
-    text-align: center;
-
-    overflow: hidden;
-
-}
-
-
-.hero::before {
-
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    background-image:
-        url("https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg");
-
-    background-size: cover;
-
-    background-position: center;
-
-    opacity: 0.09;
-
-    filter: blur(5px);
-
-    z-index: -2;
-
-}
-
-
-.hero::after {
-
-    content: "";
-
-    position: absolute;
-
-    inset: 0;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(238,242,255,0.75),
-            rgba(248,250,252,0.95)
-        );
-
-    z-index: -1;
-
-}
-
-
-.hero-inner {
-
-    max-width: 1050px;
-
-    margin: auto;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 25px;
-
-}
-
-
-.hero-flower {
-
-    width: 150px;
-
-    height: 150px;
-
-    object-fit: cover;
-
-    border-radius: 35px;
-
-    box-shadow:
-        0 15px 40px
-        rgba(49,46,129,0.22);
-
-}
-
-
-.hero-text {
-
-    text-align: left;
-
-}
-
-
-.hero h1 {
-
-    font-size: 47px;
-
-    font-weight: 850;
-
-    color: #0f172a;
-
-    letter-spacing: -1.5px;
-
-}
-
-
-.hero h1 span {
-
-    color: #4f46e5;
-
-}
-
-
-.hero-subtitle {
-
-    margin-top: 7px;
-
-    color: #475569;
-
-    font-size: 19px;
-
-}
-
-
-.badges {
-
-    display: flex;
-
-    gap: 10px;
-
-    margin-top: 18px;
-
-}
-
-
-.badge {
-
-    padding: 8px 14px;
-
-    border-radius: 20px;
-
-    background: white;
-
-    border:
-        1px solid #e2e8f0;
-
-    color: #475569;
-
-    font-size: 13px;
-
-    box-shadow:
-        0 5px 15px
-        rgba(15,23,42,0.06);
-
-}
-
-
-/* =========================================================
+/* =====================================================
    MAIN
-========================================================= */
+===================================================== */
 
-.main {
+.container{
 
-    width: 92%;
+    position:relative;
+    z-index:2;
 
-    max-width: 1250px;
+    width:min(1250px,94%);
 
-    margin: 10px auto 30px;
+    margin:auto;
 
+    padding:30px 0 50px;
 }
 
 
-.dashboard {
+/* =====================================================
+   NAVBAR
+===================================================== */
 
-    display: grid;
+.navbar{
 
-    grid-template-columns:
-        1fr 1fr;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 
-    gap: 20px;
+    padding:15px 20px;
 
-}
+    border:1px solid var(--border);
 
+    background:rgba(15,23,42,.60);
 
-/* =========================================================
-   CARD
-========================================================= */
+    backdrop-filter:blur(18px);
 
-.card {
-
-    background:
-        rgba(255,255,255,0.92);
-
-    border:
-        1px solid rgba(255,255,255,0.8);
-
-    border-radius: 24px;
-
-    padding: 27px;
+    border-radius:18px;
 
     box-shadow:
-        0 15px 45px
-        rgba(30,41,59,0.10);
-
+        0 10px 40px rgba(0,0,0,.20);
 }
 
+.logo{
 
-.card-header {
+    display:flex;
+    align-items:center;
+    gap:12px;
 
-    display: flex;
-
-    align-items: center;
-
-    gap: 13px;
-
-    margin-bottom: 22px;
-
+    font-weight:800;
+    font-size:17px;
 }
 
+.logo-icon{
 
-.card-icon {
+    width:40px;
+    height:40px;
 
-    width: 43px;
+    display:grid;
+    place-items:center;
 
-    height: 43px;
-
-    border-radius: 13px;
-
-    background:
-        #eef2ff;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 22px;
-
-}
-
-
-.card-header h2 {
-
-    font-size: 21px;
-
-    color: #172554;
-
-}
-
-
-.card-header p {
-
-    color: #64748b;
-
-    font-size: 13px;
-
-    margin-top: 3px;
-
-}
-
-
-/* =========================================================
-   INPUTS
-========================================================= */
-
-.input-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    gap: 14px;
-
-}
-
-
-.input-box {
+    border-radius:12px;
 
     background:
         linear-gradient(
             135deg,
-            #f8faff,
-            #f1f5ff
+            var(--primary),
+            var(--secondary)
         );
 
-    border:
-        1px solid #dbe3ff;
-
-    border-radius: 15px;
-
-    padding: 15px;
-
+    box-shadow:
+        0 8px 25px rgba(139,92,246,.35);
 }
 
+.nav-status{
 
-.input-label {
+    display:flex;
+    align-items:center;
+    gap:8px;
 
-    display: flex;
+    color:var(--muted);
 
-    align-items: center;
-
-    gap: 7px;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    color: #1e3a8a;
-
-    margin-bottom: 9px;
-
+    font-size:13px;
 }
 
+.status-dot{
 
-.input-box input {
+    width:8px;
+    height:8px;
 
-    width: 100%;
+    border-radius:50%;
 
-    padding: 12px;
-
-    border-radius: 10px;
-
-    border:
-        1px solid #d5ddf5;
-
-    background: white;
-
-    color: #172554;
-
-    font-size: 16px;
-
-    font-weight: 600;
-
-    outline: none;
-
-}
-
-
-.input-box input:focus {
-
-    border-color: #6366f1;
+    background:var(--success);
 
     box-shadow:
-        0 0 0 3px
-        rgba(99,102,241,0.10);
+        0 0 12px var(--success);
 
+    animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+
+    0%,100%{
+        opacity:1;
+    }
+
+    50%{
+        opacity:.45;
+    }
 }
 
 
-.input-desc {
+/* =====================================================
+   HERO
+===================================================== */
 
-    color: #64748b;
+.hero{
 
-    font-size: 11px;
+    text-align:center;
 
-    margin-top: 6px;
+    padding:65px 20px 45px;
 
+    animation:fadeUp .8s ease;
+}
+
+.badge{
+
+    display:inline-flex;
+
+    padding:7px 14px;
+
+    border-radius:100px;
+
+    border:1px solid rgba(139,92,246,.30);
+
+    background:rgba(139,92,246,.10);
+
+    color:#c4b5fd;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.08em;
+
+    text-transform:uppercase;
+}
+
+.hero h1{
+
+    margin-top:18px;
+
+    font-size:
+        clamp(38px,6vw,68px);
+
+    line-height:1;
+
+    font-weight:900;
+
+    letter-spacing:-.05em;
+
+    background:
+        linear-gradient(
+            110deg,
+            #fff,
+            #c4b5fd,
+            #67e8f9
+        );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.hero p{
+
+    max-width:650px;
+
+    margin:20px auto 0;
+
+    color:var(--muted);
+
+    line-height:1.8;
+
+    font-size:15px;
 }
 
 
-/* =========================================================
-   QUICK SAMPLE
-========================================================= */
+/* =====================================================
+   DASHBOARD
+===================================================== */
 
-.quick-title {
+.dashboard{
 
-    margin: 22px 0 11px;
-
-    color: #475569;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-}
-
-
-.quick-grid {
-
-    display: grid;
+    display:grid;
 
     grid-template-columns:
-        repeat(3, 1fr);
+        minmax(0,1.05fr)
+        minmax(350px,.95fr);
 
-    gap: 9px;
+    gap:22px;
 
+    animation:fadeUp 1s ease;
 }
 
 
-.quick {
+/* =====================================================
+   CARD
+===================================================== */
 
-    border:
-        1px solid #dbe3ff;
+.card{
 
-    background: white;
+    border:1px solid var(--border);
 
-    border-radius: 12px;
+    background:var(--panel);
 
-    padding: 8px;
+    backdrop-filter:blur(22px);
 
-    cursor: pointer;
+    border-radius:26px;
 
-    transition: 0.2s;
+    box-shadow:var(--shadow);
 
+    overflow:hidden;
+}
+
+.card-header{
+
+    padding:25px 26px 10px;
+}
+
+.card-title{
+
+    font-size:18px;
+
+    font-weight:800;
+}
+
+.card-subtitle{
+
+    margin-top:6px;
+
+    color:var(--muted);
+
+    font-size:13px;
 }
 
 
-.quick:hover {
+/* =====================================================
+   SLIDERS
+===================================================== */
 
-    transform:
-        translateY(-2px);
+.controls{
+
+    padding:10px 26px 26px;
+}
+
+.slider-item{
+
+    margin-top:25px;
+}
+
+.slider-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:12px;
+}
+
+.slider-name{
+
+    font-size:14px;
+
+    font-weight:650;
+}
+
+.slider-value{
+
+    min-width:67px;
+
+    text-align:center;
+
+    padding:7px 10px;
+
+    border-radius:9px;
+
+    background:
+        rgba(139,92,246,.12);
+
+    border:1px solid
+        rgba(139,92,246,.25);
+
+    color:#c4b5fd;
+
+    font-weight:800;
+
+    font-variant-numeric:tabular-nums;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.slider-value.changed{
+
+    transform:scale(1.10);
+
+    background:
+        rgba(139,92,246,.22);
+}
+
+
+/* RANGE */
+
+input[type="range"]{
+
+    appearance:none;
+
+    width:100%;
+
+    height:6px;
+
+    border-radius:20px;
+
+    outline:none;
+
+    cursor:pointer;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            var(--primary) var(--progress),
+            rgba(255,255,255,.10) var(--progress)
+        );
+
+    transition:
+        background .2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb{
+
+    appearance:none;
+
+    width:21px;
+    height:21px;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    border:4px solid var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(139,92,246,.12),
+        0 5px 15px rgba(0,0,0,.35);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover{
+
+    transform:scale(1.18);
+
+    box-shadow:
+        0 0 0 7px rgba(139,92,246,.13),
+        0 5px 20px rgba(0,0,0,.4);
+}
+
+input[type="range"]::-moz-range-thumb{
+
+    width:17px;
+    height:17px;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    border:4px solid var(--primary);
+}
+
+
+/* =====================================================
+   PROFILE
+===================================================== */
+
+.profile{
+
+    margin-top:28px;
+
+    padding:16px;
+
+    border-radius:17px;
+
+    background:
+        rgba(255,255,255,.035);
+
+    border:1px solid var(--border);
+}
+
+.profile-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:12px;
+
+    font-size:12px;
+
+    color:var(--muted);
+}
+
+.profile-bar{
+
+    height:8px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.08);
+
+    overflow:hidden;
+}
+
+.profile-fill{
+
+    width:35%;
+
+    height:100%;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    transition:
+        width .6s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* =====================================================
+   PRESETS
+===================================================== */
+
+.presets-title{
+
+    margin-top:24px;
+
+    font-size:12px;
+
+    color:var(--muted);
+}
+
+.presets{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:9px;
+
+    margin-top:10px;
+}
+
+.preset{
+
+    padding:13px 7px;
+
+    border-radius:13px;
+
+    border:1px solid var(--border);
+
+    background:
+        rgba(255,255,255,.035);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:
+        transform .2s ease,
+        border .2s ease,
+        background .2s ease;
+}
+
+.preset:hover{
+
+    transform:translateY(-3px);
 
     border-color:
-        #818cf8;
+        rgba(139,92,246,.45);
 
-    box-shadow:
-        0 7px 18px
-        rgba(79,70,229,0.12);
+    background:
+        rgba(139,92,246,.10);
+}
 
+.preset-icon{
+
+    font-size:23px;
+
+    margin-bottom:6px;
+}
+
+.preset-name{
+
+    font-size:11px;
+
+    font-weight:700;
+}
+
+.preset-desc{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--muted);
+
+    font-size:9px;
 }
 
 
-.quick img {
+/* =====================================================
+   BUTTONS
+===================================================== */
 
-    width: 100%;
+.actions{
 
-    height: 62px;
+    display:grid;
 
-    object-fit: cover;
+    grid-template-columns:1fr auto;
 
-    border-radius: 8px;
+    gap:10px;
 
+    margin-top:20px;
 }
 
+.predict{
 
-.quick-name {
+    min-height:50px;
 
-    font-size: 13px;
+    border:none;
 
-    font-weight: 700;
-
-    margin-top: 6px;
-
-    color: #1e293b;
-
-}
-
-
-.quick-value {
-
-    font-size: 10px;
-
-    color: #64748b;
-
-    margin-top: 3px;
-
-}
-
-
-/* =========================================================
-   BUTTON
-========================================================= */
-
-.predict-btn {
-
-    margin-top: 20px;
-
-    width: 100%;
-
-    padding: 15px;
-
-    border: none;
-
-    border-radius: 13px;
-
-    cursor: pointer;
-
-    color: white;
-
-    font-size: 16px;
-
-    font-weight: 800;
+    border-radius:13px;
 
     background:
         linear-gradient(
-            100deg,
+            110deg,
             #7c3aed,
             #4f46e5,
-            #3b82f6
+            #0891b2
         );
 
-    box-shadow:
-        0 10px 25px
-        rgba(79,70,229,0.28);
+    color:white;
 
-    transition: 0.2s;
+    font-weight:800;
 
-}
+    cursor:pointer;
 
-
-.predict-btn:hover {
-
-    transform:
-        translateY(-2px);
+    font-size:14px;
 
     box-shadow:
-        0 15px 30px
-        rgba(79,70,229,0.35);
+        0 10px 25px rgba(79,70,229,.30);
 
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.predict:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 15px 35px rgba(79,70,229,.40);
+}
+
+.predict:active{
+
+    transform:scale(.98);
+}
+
+.reset{
+
+    width:50px;
+
+    border:1px solid var(--border);
+
+    border-radius:13px;
+
+    background:
+        rgba(255,255,255,.05);
+
+    color:#cbd5e1;
+
+    cursor:pointer;
+
+    font-size:18px;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.reset:hover{
+
+    transform:rotate(-25deg);
+
+    background:
+        rgba(255,255,255,.10);
 }
 
 
-/* =========================================================
-   RESULT
-========================================================= */
+/* =====================================================
+   RESULT CARD
+===================================================== */
 
-.result-card {
+.result-card{
 
-    min-height: 100%;
+    min-height:100%;
 
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    padding:30px;
+}
+
+.result-label{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    letter-spacing:.12em;
+
+    text-transform:uppercase;
+
+    font-weight:800;
 }
 
 
-.result-content {
+/* FLOWER */
+
+.flower-container{
+
+    width:min(100%,390px);
+
+    aspect-ratio:1.18;
+
+    margin:20px 0;
+
+    border-radius:23px;
+
+    overflow:hidden;
+
+    position:relative;
+
+    background:#111827;
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.40);
+}
+
+.flower-container::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
 
     background:
         linear-gradient(
-            135deg,
-            #f0fdf9,
-            #eff6ff
+            to top,
+            rgba(0,0,0,.35),
+            transparent 45%
         );
 
-    border:
-        1px solid #d8f3ea;
+    pointer-events:none;
+}
 
-    border-radius: 18px;
+.flower-container img{
 
-    padding: 16px;
+    width:100%;
+    height:100%;
 
-    display: grid;
+    object-fit:cover;
 
-    grid-template-columns:
-        1.2fr 1fr;
+    display:block;
 
-    gap: 18px;
+    transition:
+        transform .7s cubic-bezier(.22,1,.36,1),
+        opacity .4s ease;
+}
 
-    align-items: center;
+.flower-container img.animate{
 
+    animation:
+        flowerReveal .75s
+        cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes flowerReveal{
+
+    0%{
+
+        opacity:0;
+
+        transform:
+            scale(1.12)
+            rotate(1deg);
+    }
+
+    100%{
+
+        opacity:1;
+
+        transform:
+            scale(1)
+            rotate(0);
+    }
 }
 
 
-.result-image {
+/* RESULT */
 
-    width: 100%;
+.result-name{
 
-    height: 270px;
+    font-size:32px;
 
-    object-fit: cover;
+    font-weight:900;
 
-    border-radius: 15px;
-
-    box-shadow:
-        0 10px 25px
-        rgba(15,23,42,0.12);
-
-}
-
-
-.result-info {
-
-    padding: 5px;
-
-}
-
-
-.result-label {
-
-    display: inline-block;
-
-    padding: 7px 12px;
-
-    border-radius: 20px;
-
-    background: #ecfdf5;
-
-    color: #047857;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    margin-bottom: 13px;
-
-}
-
-
-.result-name {
-
-    font-size: 35px;
-
-    font-weight: 850;
-
-    color: #0f766e;
-
-    margin-bottom: 5px;
-
-}
-
-
-.class-id {
-
-    color: #059669;
-
-    font-size: 18px;
-
-    font-weight: 700;
-
-    margin-bottom: 16px;
-
-}
-
-
-.description-result {
-
-    color: #475569;
-
-    line-height: 1.65;
-
-    font-size: 13px;
-
-}
-
-
-.result-species {
-
-    margin-top: 18px;
-
-    padding: 11px;
-
-    background: white;
-
-    border:
-        1px solid #dbeafe;
-
-    border-radius: 11px;
-
-    color: #334155;
-
-    font-size: 13px;
-
-}
-
-
-.result-species strong {
-
-    color: #1e3a8a;
-
-}
-
-
-/* =========================================================
-   FLOWER SELECT
-========================================================= */
-
-.flower-list {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 10px;
-
-    margin-top: 15px;
-
-}
-
-
-.flower-item {
-
-    border:
-        1px solid #dbe3ff;
-
-    background: white;
-
-    border-radius: 12px;
-
-    overflow: hidden;
-
-    cursor: pointer;
-
-    transition: 0.2s;
-
-}
-
-
-.flower-item:hover {
-
-    transform:
-        translateY(-2px);
-
-    border-color:
-        #818cf8;
-
-}
-
-
-.flower-item img {
-
-    width: 100%;
-
-    height: 80px;
-
-    object-fit: cover;
-
-}
-
-
-.flower-item div {
-
-    padding: 8px;
-
-    text-align: center;
-
-}
-
-
-.flower-item strong {
-
-    font-size: 13px;
-
-    color: #1e293b;
-
-}
-
-
-.flower-item small {
-
-    display: block;
-
-    margin-top: 3px;
-
-    color: #64748b;
-
-    font-size: 10px;
-
-}
-
-
-/* =========================================================
-   FOOTER INFORMATION
-========================================================= */
-
-.info-bar {
-
-    margin-top: 18px;
+    letter-spacing:-.03em;
 
     background:
-        rgba(255,255,255,0.88);
+        linear-gradient(
+            90deg,
+            #fff,
+            #c4b5fd,
+            #67e8f9
+        );
 
-    border-radius: 20px;
+    -webkit-background-clip:text;
 
-    padding: 18px 25px;
+    -webkit-text-fill-color:transparent;
+}
 
-    display: grid;
+.result-description{
+
+    max-width:390px;
+
+    margin-top:8px;
+
+    color:var(--muted);
+
+    line-height:1.65;
+
+    font-size:13px;
+}
+
+
+/* =====================================================
+   RESULT DATA
+===================================================== */
+
+.data-grid{
+
+    display:grid;
 
     grid-template-columns:
-        1fr 1fr 1fr 1fr;
+        repeat(4,1fr);
 
-    gap: 20px;
+    width:100%;
 
-    box-shadow:
-        0 10px 35px
-        rgba(30,41,59,0.08);
+    gap:7px;
 
+    margin-top:23px;
+}
+
+.data-box{
+
+    padding:10px 5px;
+
+    border-radius:11px;
+
+    background:
+        rgba(255,255,255,.04);
+
+    border:1px solid var(--border);
+}
+
+.data-value{
+
+    font-size:14px;
+
+    font-weight:800;
+}
+
+.data-label{
+
+    margin-top:3px;
+
+    font-size:8px;
+
+    color:var(--muted);
+
+    text-transform:uppercase;
 }
 
 
-.info-item {
+/* =====================================================
+   API STATUS
+===================================================== */
 
-    border-right:
-        1px solid #e2e8f0;
+.api-status{
 
+    margin-top:20px;
+
+    padding:9px 13px;
+
+    border-radius:100px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    background:
+        rgba(34,197,94,.08);
+
+    border:
+        1px solid rgba(34,197,94,.20);
+
+    color:#86efac;
+
+    font-size:11px;
 }
 
 
-.info-item:last-child {
-
-    border: none;
-
-}
-
-
-.info-title {
-
-    font-size: 12px;
-
-    color: #64748b;
-
-    margin-bottom: 4px;
-
-}
-
-
-.info-value {
-
-    color: #1e3a8a;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-}
-
-
-.footer {
-
-    text-align: center;
-
-    color: #64748b;
-
-    font-size: 12px;
-
-    padding: 22px;
-
-}
-
-
-.footer a {
-
-    color: #4f46e5;
-
-    text-decoration: none;
-
-    font-weight: 600;
-
-}
-
-
-/* =========================================================
+/* =====================================================
    ERROR
-========================================================= */
+===================================================== */
 
-.error {
+.error{
 
-    display: none;
+    min-height:18px;
 
-    margin-top: 12px;
+    margin-top:8px;
 
-    padding: 12px;
+    color:#fca5a5;
 
-    border-radius: 10px;
-
-    background: #fef2f2;
-
-    color: #b91c1c;
-
-    font-size: 13px;
-
+    font-size:11px;
 }
 
 
-/* =========================================================
+/* =====================================================
+   ANIMATION
+===================================================== */
+
+.fade-up{
+
+    animation:
+        fadeUp .7s
+        cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(18px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
+}
+
+
+/* =====================================================
    RESPONSIVE
-========================================================= */
+===================================================== */
 
-@media (max-width: 850px) {
+@media(max-width:850px){
 
-    .dashboard {
+    .dashboard{
 
-        grid-template-columns: 1fr;
-
+        grid-template-columns:1fr;
     }
 
-    .info-bar {
+    .result-card{
 
-        grid-template-columns:
-            1fr 1fr;
+        min-height:500px;
+    }
+}
 
+@media(max-width:500px){
+
+    .container{
+
+        width:94%;
     }
 
+    .hero{
+
+        padding:
+            45px 10px 30px;
+    }
+
+    .hero h1{
+
+        font-size:40px;
+    }
+
+    .card-header,
+    .controls{
+
+        padding-left:19px;
+        padding-right:19px;
+    }
+
+    .presets{
+
+        gap:5px;
+    }
+
+    .result-name{
+
+        font-size:27px;
+    }
 }
 
 
-@media (max-width: 600px) {
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
 
-    .navbar {
+@media(prefers-reduced-motion:reduce){
 
-        padding: 0 15px;
+    *,
+    *::before,
+    *::after{
 
+        animation-duration:.01ms!important;
+
+        transition-duration:.01ms!important;
     }
-
-    .logo {
-
-        margin-right: 10px;
-
-    }
-
-    .nav-links {
-
-        display: none;
-
-    }
-
-    .hero-inner {
-
-        flex-direction: column;
-
-    }
-
-    .hero-text {
-
-        text-align: center;
-
-    }
-
-    .hero h1 {
-
-        font-size: 34px;
-
-    }
-
-    .badges {
-
-        justify-content: center;
-
-        flex-wrap: wrap;
-
-    }
-
-    .input-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-    .quick-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-    .result-content {
-
-        grid-template-columns: 1fr;
-
-    }
-
-    .result-image {
-
-        height: 220px;
-
-    }
-
-    .flower-list {
-
-        grid-template-columns: 1fr 1fr 1fr;
-
-    }
-
-    .info-bar {
-
-        grid-template-columns: 1fr;
-
-    }
-
-    .info-item {
-
-        border-right: none;
-
-        border-bottom:
-            1px solid #e2e8f0;
-
-        padding-bottom: 10px;
-
-    }
-
 }
 
 </style>
@@ -1275,50 +1139,42 @@ body {
 <body>
 
 
-<!-- ======================================================
+<!-- BACKGROUND -->
+
+<div class="background">
+
+    <div class="orb one"></div>
+
+    <div class="orb two"></div>
+
+</div>
+
+
+<div class="container">
+
+
+<!-- =====================================================
      NAVBAR
-======================================================= -->
+===================================================== -->
 
 <nav class="navbar">
 
     <div class="logo">
 
-        <div class="logo-flower">
+        <div class="logo-icon">
             🌸
         </div>
 
-        Iris Classification
+        <span>Iris AI</span>
 
     </div>
 
 
-    <div class="nav-links">
-
-        <a class="nav-link active"
-           href="/">
-            🏠 Home
-        </a>
-
-        <a class="nav-link"
-           href="/docs"
-           target="_blank">
-            📄 API Docs
-        </a>
-
-        <a class="nav-link"
-           href="/health"
-           target="_blank">
-            〽 Health
-        </a>
-
-    </div>
-
-
-    <div class="api-status">
+    <div class="nav-status">
 
         <span class="status-dot"></span>
 
-        API Online
+        SVM Model Online
 
     </div>
 
@@ -1326,465 +1182,455 @@ body {
 
 
 
-<!-- ======================================================
+<!-- =====================================================
      HERO
-======================================================= -->
+===================================================== -->
 
 <section class="hero">
 
-    <div class="hero-inner">
-
-        <img
-            class="hero-flower"
-            src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg"
-            alt="Iris flower"
-        >
-
-
-        <div class="hero-text">
-
-            <h1>
-                <span>Iris</span>
-                Flower Classification
-            </h1>
-
-            <div class="hero-subtitle">
-
-                Dự đoán loài hoa Iris bằng mô hình SVM
-
-            </div>
-
-
-            <div class="badges">
-
-                <div class="badge">
-                    🧠 Machine Learning
-                </div>
-
-                <div class="badge">
-                    ⚡ SVM
-                </div>
-
-                <div class="badge">
-                    🔗 FastAPI
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="badge">
+        ✦ Artificial Intelligence · Machine Learning
     </div>
+
+
+    <h1>
+        Iris AI
+    </h1>
+
+
+    <p>
+
+        Hệ thống phân loại hoa Iris sử dụng
+        <strong>Support Vector Machine</strong>.
+        Điều chỉnh các đặc trưng hình thái và
+        khám phá kết quả dự đoán theo thời gian thực.
+
+    </p>
 
 </section>
 
 
 
-<!-- ======================================================
-     MAIN
-======================================================= -->
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
 
-<main class="main">
-
-
-<div class="dashboard">
+<main class="dashboard">
 
 
-<!-- ======================================================
-     INPUT CARD
-======================================================= -->
+<!-- =====================================================
+     LEFT
+===================================================== -->
 
-<div class="card">
+<section class="card">
+
 
     <div class="card-header">
 
-        <div class="card-icon">
-            🌿
+        <div class="card-title">
+            Phân tích hình thái
         </div>
 
-        <div>
+        <div class="card-subtitle">
 
-            <h2>
-                Nhập thông số hoa
-            </h2>
-
-            <p>
-                Nhập 4 thông số đặc trưng của hoa Iris
-                (đơn vị: cm)
-            </p>
+            Điều chỉnh thông số bằng các thanh trượt
 
         </div>
 
     </div>
 
 
-    <div class="input-grid">
+
+    <div class="controls">
 
 
-        <!-- SEPAL LENGTH -->
+<!-- SEPAL LENGTH -->
 
-        <div class="input-box">
+<div class="slider-item">
 
-            <div class="input-label">
-                🍃 Sepal Length
-            </div>
+<div class="slider-header">
 
-            <input
-                id="sepal_length"
-                type="number"
-                step="0.1"
-                value="5.1"
-            >
+<span class="slider-name">
+    Chiều dài đài hoa
+</span>
 
-            <div class="input-desc">
-                Chiều dài đài hoa (cm)
-            </div>
+<span
+    class="slider-value"
+    id="sepal_length_value">
+    5.1 cm
+</span>
 
-        </div>
+</div>
 
 
-        <!-- SEPAL WIDTH -->
-
-        <div class="input-box">
-
-            <div class="input-label">
-                💧 Sepal Width
-            </div>
-
-            <input
-                id="sepal_width"
-                type="number"
-                step="0.1"
-                value="3.5"
-            >
-
-            <div class="input-desc">
-                Chiều rộng đài hoa (cm)
-            </div>
-
-        </div>
+<input
+    id="sepal_length"
+    type="range"
+    min="4"
+    max="8"
+    step="0.1"
+    value="5.1"
+>
 
 
-        <!-- PETAL LENGTH -->
-
-        <div class="input-box">
-
-            <div class="input-label">
-                🌼 Petal Length
-            </div>
-
-            <input
-                id="petal_length"
-                type="number"
-                step="0.1"
-                value="1.4"
-            >
-
-            <div class="input-desc">
-                Chiều dài cánh hoa (cm)
-            </div>
-
-        </div>
+</div>
 
 
-        <!-- PETAL WIDTH -->
 
-        <div class="input-box">
+<!-- SEPAL WIDTH -->
 
-            <div class="input-label">
-                ✨ Petal Width
-            </div>
+<div class="slider-item">
 
-            <input
-                id="petal_width"
-                type="number"
-                step="0.1"
-                value="0.2"
-            >
+<div class="slider-header">
 
-            <div class="input-desc">
-                Chiều rộng cánh hoa (cm)
-            </div>
+<span class="slider-name">
+    Chiều rộng đài hoa
+</span>
 
-        </div>
+<span
+    class="slider-value"
+    id="sepal_width_value">
+    3.5 cm
+</span>
 
+</div>
+
+
+<input
+    id="sepal_width"
+    type="range"
+    min="2"
+    max="4.5"
+    step="0.1"
+    value="3.5"
+>
+
+
+</div>
+
+
+
+<!-- PETAL LENGTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều dài cánh hoa
+</span>
+
+<span
+    class="slider-value"
+    id="petal_length_value">
+    1.4 cm
+</span>
+
+</div>
+
+
+<input
+    id="petal_length"
+    type="range"
+    min="1"
+    max="7"
+    step="0.1"
+    value="1.4"
+>
+
+
+</div>
+
+
+
+<!-- PETAL WIDTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều rộng cánh hoa
+</span>
+
+<span
+    class="slider-value"
+    id="petal_width_value">
+    0.2 cm
+</span>
+
+</div>
+
+
+<input
+    id="petal_width"
+    type="range"
+    min="0.1"
+    max="2.5"
+    step="0.1"
+    value="0.2"
+>
+
+
+</div>
+
+
+
+<!-- PROFILE -->
+
+<div class="profile">
+
+    <div class="profile-header">
+
+        <span>
+            Morphology Profile
+        </span>
+
+        <span id="profileText">
+            Compact
+        </span>
 
     </div>
 
-
-    <!-- QUICK SAMPLES -->
-
-    <div class="quick-title">
-        ⚡ Mẫu thử nhanh
-    </div>
-
-
-    <div class="quick-grid">
-
+    <div class="profile-bar">
 
         <div
-            class="quick"
-            onclick="setSample(
-                5.1,3.5,1.4,0.2
-            )"
-        >
-
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
-            >
-
-            <div class="quick-name">
-                Setosa
-            </div>
-
-            <div class="quick-value">
-                5.1 / 3.5 / 1.4 / 0.2
-            </div>
-
+            id="profileFill"
+            class="profile-fill">
         </div>
-
-
-        <div
-            class="quick"
-            onclick="setSample(
-                6.0,2.9,4.5,1.5
-            )"
-        >
-
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg"
-            >
-
-            <div class="quick-name">
-                Versicolor
-            </div>
-
-            <div class="quick-value">
-                6.0 / 2.9 / 4.5 / 1.5
-            </div>
-
-        </div>
-
-
-        <div
-            class="quick"
-            onclick="setSample(
-                6.5,3.0,5.2,2.0
-            )"
-        >
-
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg"
-            >
-
-            <div class="quick-name">
-                Virginica
-            </div>
-
-            <div class="quick-value">
-                6.5 / 3.0 / 5.2 / 2.0
-            </div>
-
-        </div>
-
 
     </div>
 
+</div>
 
-    <!-- BUTTON -->
 
-    <button
-        class="predict-btn"
-        onclick="predict()"
-        id="predictButton"
+
+<!-- PRESETS -->
+
+<div class="presets-title">
+
+    Chọn mẫu nhanh
+
+</div>
+
+
+<div class="presets">
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="setosa">
+
+    <div class="preset-icon">
+        🌱
+    </div>
+
+    <div class="preset-name">
+        Setosa
+    </div>
+
+    <span class="preset-desc">
+        Nhỏ · ngắn
+    </span>
+
+</button>
+
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="versicolor">
+
+    <div class="preset-icon">
+        🌷
+    </div>
+
+    <div class="preset-name">
+        Versicolor
+    </div>
+
+    <span class="preset-desc">
+        Trung bình
+    </span>
+
+</button>
+
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="virginica">
+
+    <div class="preset-icon">
+        🌸
+    </div>
+
+    <div class="preset-name">
+        Virginica
+    </div>
+
+    <span class="preset-desc">
+        Lớn · dài
+    </span>
+
+</button>
+
+
+</div>
+
+
+
+<!-- ACTIONS -->
+
+<div class="actions">
+
+
+<button
+    type="button"
+    id="predictBtn"
+    class="predict">
+
+    ✦ &nbsp; Phân loại bằng SVM
+
+</button>
+
+
+<button
+    type="button"
+    id="resetBtn"
+    class="reset"
+    title="Đặt lại">
+
+    ↻
+
+</button>
+
+
+</div>
+
+
+<div
+    id="error"
+    class="error">
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- =====================================================
+     RIGHT RESULT
+===================================================== -->
+
+<section class="card result-card">
+
+
+<div class="result-label">
+
+    Kết quả dự đoán
+
+</div>
+
+
+<div class="flower-container">
+
+    <img
+        id="flowerImage"
+        src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
+        alt="Iris Setosa"
     >
-        ✨ Dự đoán loài hoa →
-    </button>
 
+</div>
+
+
+<div
+    id="resultName"
+    class="result-name">
+
+    Iris Setosa
+
+</div>
+
+
+<div
+    id="resultDescription"
+    class="result-description">
+
+    Hoa Iris Setosa thường có
+    cánh hoa ngắn và hẹp,
+    kích thước tổng thể nhỏ hơn
+    so với các loài Iris còn lại.
+
+</div>
+
+
+
+<!-- DATA -->
+
+<div class="data-grid">
+
+
+<div class="data-box">
 
     <div
-        class="error"
-        id="error"
-    ></div>
+        id="dataSL"
+        class="data-value">
+        5.1
+    </div>
 
+    <div class="data-label">
+        Sepal L
+    </div>
 
 </div>
 
 
-
-<!-- ======================================================
-     RESULT CARD
-======================================================= -->
-
-<div class="card result-card">
-
-    <div class="card-header">
-
-        <div class="card-icon">
-            🔮
-        </div>
-
-        <div>
-
-            <h2>
-                Kết quả dự đoán
-            </h2>
-
-            <p>
-                Kết quả từ mô hình SVM
-            </p>
-
-        </div>
-
-    </div>
-
+<div class="data-box">
 
     <div
-        class="result-content"
-        id="resultContent"
-    >
-
-
-        <img
-            id="resultImage"
-            class="result-image"
-            src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
-            alt="Iris"
-        >
-
-
-        <div class="result-info">
-
-            <div class="result-label">
-                ✓ Mô hình đã dự đoán
-            </div>
-
-            <div
-                class="result-name"
-                id="resultName"
-            >
-                Setosa
-            </div>
-
-            <div
-                class="class-id"
-                id="classId"
-            >
-                Class ID: 0
-            </div>
-
-            <div
-                class="description-result"
-                id="resultDescription"
-            >
-
-                Iris Setosa là một trong ba lớp
-                của bộ dữ liệu Iris.
-
-                Mô hình SVM sử dụng các đặc trưng
-                về chiều dài và chiều rộng của đài hoa
-                và cánh hoa để phân loại.
-
-            </div>
-
-            <div class="result-species">
-
-                🌸 Loài hoa:
-
-                <strong id="speciesText">
-                    Iris Setosa
-                </strong>
-
-            </div>
-
-        </div>
-
+        id="dataSW"
+        class="data-value">
+        3.5
     </div>
 
+    <div class="data-label">
+        Sepal W
+    </div>
+
+</div>
 
 
-    <!-- FLOWER LIST -->
+<div class="data-box">
 
-    <div class="flower-list">
+    <div
+        id="dataPL"
+        class="data-value">
+        1.4
+    </div>
 
+    <div class="data-label">
+        Petal L
+    </div>
 
-        <div
-            class="flower-item"
-            onclick="setSample(
-                5.1,3.5,1.4,0.2
-            )"
-        >
-
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
-            >
-
-            <div>
-
-                <strong>
-                    Setosa
-                </strong>
-
-                <small>
-                    Cánh hoa nhỏ
-                </small>
-
-            </div>
-
-        </div>
+</div>
 
 
-        <div
-            class="flower-item"
-            onclick="setSample(
-                6.0,2.9,4.5,1.5
-            )"
-        >
+<div class="data-box">
 
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg"
-            >
+    <div
+        id="dataPW"
+        class="data-value">
+        0.2
+    </div>
 
-            <div>
-
-                <strong>
-                    Versicolor
-                </strong>
-
-                <small>
-                    Cánh hoa tím xanh
-                </small>
-
-            </div>
-
-        </div>
-
-
-        <div
-            class="flower-item"
-            onclick="setSample(
-                6.5,3.0,5.2,2.0
-            )"
-        >
-
-            <img
-                src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg"
-            >
-
-            <div>
-
-                <strong>
-                    Virginica
-                </strong>
-
-                <small>
-                    Cánh hoa lớn
-                </small>
-
-            </div>
-
-        </div>
-
-
+    <div class="data-label">
+        Petal W
     </div>
 
 </div>
@@ -1794,202 +1640,371 @@ body {
 
 
 
-<!-- ======================================================
-     INFORMATION BAR
-======================================================= -->
+<div class="api-status">
 
-<div class="info-bar">
+    <span class="status-dot"></span>
 
-
-    <div class="info-item">
-
-        <div class="info-title">
-            🗄️ Dữ liệu
-        </div>
-
-        <div class="info-value">
-            Iris Dataset · 150 mẫu
-        </div>
-
-    </div>
-
-
-    <div class="info-item">
-
-        <div class="info-title">
-            ⚙️ Mô hình
-        </div>
-
-        <div class="info-value">
-            Support Vector Machine
-        </div>
-
-    </div>
-
-
-    <div class="info-item">
-
-        <div class="info-title">
-            ⚡ API Endpoints
-        </div>
-
-        <div class="info-value">
-            /predict · /health · /docs
-        </div>
-
-    </div>
-
-
-    <div class="info-item">
-
-        <div class="info-title">
-            🌱 Công nghệ
-        </div>
-
-        <div class="info-value">
-            Python · FastAPI · SVM
-        </div>
-
-    </div>
-
+    <span id="apiStatus">
+        SVM prediction ready
+    </span>
 
 </div>
+
+
+</section>
 
 
 </main>
 
 
-
-<!-- ======================================================
-     FOOTER
-======================================================= -->
-
-<footer class="footer">
-
-    Iris Flower Classification
-
-    ·
-
-    Machine Learning Project
-
-    <br>
-
-    <a href="/docs" target="_blank">
-        API Documentation
-    </a>
-
-    &nbsp; · &nbsp;
-
-    <a href="/health" target="_blank">
-        Health Check
-    </a>
-
-</footer>
+</div>
 
 
-
-<!-- ======================================================
-     JAVASCRIPT
-======================================================= -->
 
 <script>
 
+/* =====================================================
+   IRIS AI FRONTEND
+===================================================== */
 
-// ==========================================================
-// FLOWER DATA
-// ==========================================================
+const sliders = {
 
-const flowerData = {
+    sepal_length:
+        document.getElementById("sepal_length"),
 
-    "Setosa": {
+    sepal_width:
+        document.getElementById("sepal_width"),
 
-        id: 0,
+    petal_length:
+        document.getElementById("petal_length"),
 
-        image:
-            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG",
+    petal_width:
+        document.getElementById("petal_width")
+};
 
-        description:
-            "Iris Setosa là một trong ba lớp của bộ dữ liệu Iris. Loài này thường có kích thước cánh hoa nhỏ hơn so với hai lớp còn lại."
+
+const defaults = {
+
+    sepal_length:5.1,
+
+    sepal_width:3.5,
+
+    petal_length:1.4,
+
+    petal_width:0.2
+
+};
+
+
+const presets = {
+
+    setosa:{
+
+        sepal_length:5.1,
+        sepal_width:3.5,
+        petal_length:1.4,
+        petal_width:0.2
 
     },
 
-    "Versicolor": {
+    versicolor:{
 
-        id: 1,
-
-        image:
-            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg",
-
-        description:
-            "Iris Versicolor là lớp trung gian trong bộ dữ liệu Iris, có các đặc trưng kích thước nằm giữa Setosa và Virginica."
+        sepal_length:6.0,
+        sepal_width:2.9,
+        petal_length:4.5,
+        petal_width:1.5
 
     },
 
-    "Virginica": {
+    virginica:{
 
-        id: 2,
-
-        image:
-            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg",
-
-        description:
-            "Iris Virginica thường có kích thước cánh hoa lớn hơn và là một trong ba lớp được mô hình SVM phân loại."
+        sepal_length:6.5,
+        sepal_width:3.0,
+        petal_length:5.5,
+        petal_width:1.8
 
     }
 
 };
 
 
-// ==========================================================
-// SET SAMPLE
-// ==========================================================
+const flowers = {
 
-function setSample(
-    sepalLength,
-    sepalWidth,
-    petalLength,
-    petalWidth
-) {
+    0:{
 
-    document.getElementById(
-        "sepal_length"
-    ).value = sepalLength;
+        name:"Iris Setosa",
+
+        description:
+            "Hoa Iris Setosa thường có cánh hoa ngắn và hẹp, kích thước tổng thể nhỏ hơn so với các loài Iris còn lại.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
+
+    },
+
+    1:{
+
+        name:"Iris Versicolor",
+
+        description:
+            "Iris Versicolor có đặc trưng hình thái ở mức trung gian, với kích thước cánh hoa lớn hơn Setosa.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg"
+
+    },
+
+    2:{
+
+        name:"Iris Virginica",
+
+        description:
+            "Iris Virginica thường có cánh hoa dài và rộng, với kích thước lớn hơn hai loài Iris còn lại.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg"
+
+    }
+
+};
 
 
-    document.getElementById(
-        "sepal_width"
-    ).value = sepalWidth;
+/* =====================================================
+   UPDATE SLIDER
+===================================================== */
+
+function updateSlider(element){
+
+    const min =
+        Number(element.min);
+
+    const max =
+        Number(element.max);
+
+    const value =
+        Number(element.value);
 
 
-    document.getElementById(
-        "petal_length"
-    ).value = petalLength;
+    const progress =
+        ((value-min)/(max-min))*100;
 
 
-    document.getElementById(
-        "petal_width"
-    ).value = petalWidth;
+    element.style
+        .setProperty(
+            "--progress",
+            progress + "%"
+        );
 
 
-    document.getElementById(
-        "error"
-    ).style.display = "none";
+    const id =
+        element.id;
+
+
+    const valueBox =
+        document.getElementById(
+            id + "_value"
+        );
+
+
+    if(valueBox){
+
+        valueBox.textContent =
+            value.toFixed(1) + " cm";
+
+
+        valueBox.classList.remove(
+            "changed"
+        );
+
+
+        void valueBox.offsetWidth;
+
+
+        valueBox.classList.add(
+            "changed"
+        );
+
+    }
+
+
+    updateData();
+
+    updateProfile();
 
 }
 
 
-// ==========================================================
-// PREDICT
-// ==========================================================
+/* =====================================================
+   UPDATE DATA
+===================================================== */
 
-async function predict() {
+function updateData(){
 
+    document.getElementById("dataSL")
+        .textContent =
+        Number(
+            sliders.sepal_length.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataSW")
+        .textContent =
+        Number(
+            sliders.sepal_width.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataPL")
+        .textContent =
+        Number(
+            sliders.petal_length.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataPW")
+        .textContent =
+        Number(
+            sliders.petal_width.value
+        ).toFixed(1);
+
+}
+
+
+/* =====================================================
+   MORPHOLOGY PROFILE
+===================================================== */
+
+function updateProfile(){
+
+    const petalLength =
+        Number(
+            sliders.petal_length.value
+        );
+
+    const petalWidth =
+        Number(
+            sliders.petal_width.value
+        );
+
+
+    let score =
+        ((petalLength-1)/6)*70
+        +
+        ((petalWidth-.1)/2.4)*30;
+
+
+    score =
+        Math.max(
+            0,
+            Math.min(100,score)
+        );
+
+
+    document.getElementById(
+        "profileFill"
+    ).style.width =
+        score + "%";
+
+
+    let text = "Compact";
+
+
+    if(score > 70){
+
+        text = "Large";
+
+    }
+
+    else if(score > 40){
+
+        text = "Medium";
+
+    }
+
+
+    document.getElementById(
+        "profileText"
+    ).textContent =
+        text;
+
+}
+
+
+/* =====================================================
+   INIT
+===================================================== */
+
+Object.values(sliders).forEach(
+    slider => {
+
+        updateSlider(slider);
+
+        slider.addEventListener(
+            "input",
+            () => {
+
+                updateSlider(slider);
+
+            }
+        );
+
+    }
+);
+
+
+/* =====================================================
+   PRESET
+===================================================== */
+
+document
+.querySelectorAll(".preset")
+.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            const type =
+                button.dataset.type;
+
+
+            const data =
+                presets[type];
+
+
+            Object.entries(data)
+            .forEach(
+                ([key,value]) => {
+
+                    sliders[key].value =
+                        value;
+
+                    updateSlider(
+                        sliders[key]
+                    );
+
+                }
+            );
+
+
+            predict();
+
+        }
+    );
+
+});
+
+
+/* =====================================================
+   PREDICT
+===================================================== */
+
+async function predict(){
 
     const button =
         document.getElementById(
-            "predictButton"
+            "predictBtn"
         );
-
 
     const error =
         document.getElementById(
@@ -1997,82 +2012,52 @@ async function predict() {
         );
 
 
+    error.textContent = "";
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "⏳  Đang phân tích...";
+
+
     const data = {
 
         sepal_length:
-            parseFloat(
-                document.getElementById(
-                    "sepal_length"
-                ).value
+            Number(
+                sliders.sepal_length.value
             ),
 
         sepal_width:
-            parseFloat(
-                document.getElementById(
-                    "sepal_width"
-                ).value
+            Number(
+                sliders.sepal_width.value
             ),
 
         petal_length:
-            parseFloat(
-                document.getElementById(
-                    "petal_length"
-                ).value
+            Number(
+                sliders.petal_length.value
             ),
 
         petal_width:
-            parseFloat(
-                document.getElementById(
-                    "petal_width"
-                ).value
+            Number(
+                sliders.petal_width.value
             )
 
     };
 
 
-    // Kiểm tra dữ liệu
-
-    if (
-        Object.values(data)
-        .some(value => isNaN(value))
-    ) {
-
-        error.innerText =
-            "⚠️ Vui lòng nhập đầy đủ 4 thông số.";
-
-        error.style.display =
-            "block";
-
-        return;
-
-    }
-
-
-    // Loading
-
-    button.innerText =
-        "⏳ Đang phân tích...";
-
-    button.disabled = true;
-
-
-    try {
-
-
-        // Gọi API
+    try{
 
         const response =
             await fetch(
                 "/predict",
                 {
 
-                    method: "POST",
+                    method:"POST",
 
-                    headers: {
-
+                    headers:{
                         "Content-Type":
                             "application/json"
-
                     },
 
                     body:
@@ -2082,10 +2067,11 @@ async function predict() {
             );
 
 
-        if (!response.ok) {
+        if(!response.ok){
 
             throw new Error(
-                "API không phản hồi."
+                "HTTP " +
+                response.status
             );
 
         }
@@ -2095,118 +2081,193 @@ async function predict() {
             await response.json();
 
 
+        const classId =
+            Number(
+                result.class_id
+            );
+
+
+        const flower =
+            flowers[classId];
+
+
+        if(!flower){
+
+            throw new Error(
+                "Class không hợp lệ"
+            );
+
+        }
+
+
+        /* IMAGE */
+
+        const image =
+            document.getElementById(
+                "flowerImage"
+            );
+
+
+        image.classList.remove(
+            "animate"
+        );
+
+
+        void image.offsetWidth;
+
+
+        image.src =
+            flower.image;
+
+
+        image.alt =
+            flower.name;
+
+
+        image.classList.add(
+            "animate"
+        );
+
+
+        /* NAME */
+
         const name =
-            result.prediction;
+            document.getElementById(
+                "resultName"
+            );
 
 
-        const info =
-            flowerData[name];
+        name.classList.remove(
+            "fade-up"
+        );
 
 
-        // ==============================================
-        // UPDATE RESULT
-        // ==============================================
-
-        document.getElementById(
-            "resultImage"
-        ).src =
-            info.image;
+        void name.offsetWidth;
 
 
-        document.getElementById(
-            "resultName"
-        ).innerText =
-            name;
+        name.textContent =
+            flower.name;
 
 
-        document.getElementById(
-            "classId"
-        ).innerText =
-            "Class ID: " + info.id;
+        name.classList.add(
+            "fade-up"
+        );
 
 
-        document.getElementById(
-            "speciesText"
-        ).innerText =
-            "Iris " + name;
-
+        /* DESCRIPTION */
 
         document.getElementById(
             "resultDescription"
-        ).innerText =
-            info.description;
+        ).textContent =
+            flower.description;
 
 
-        // Cuộn tới kết quả
+        /* STATUS */
 
         document.getElementById(
-            "resultContent"
-        ).scrollIntoView({
-
-            behavior: "smooth",
-
-            block: "center"
-
-        });
+            "apiStatus"
+        ).textContent =
+            "Prediction completed · Class " +
+            classId;
 
 
     }
 
-    catch (err) {
+    catch(err){
 
-        error.innerText =
-            "❌ " + err.message;
-
-        error.style.display =
-            "block";
+        error.textContent =
+            "Không thể kết nối API: " +
+            err.message;
 
     }
 
+    finally{
 
-    finally {
+        button.disabled =
+            false;
 
-        button.innerText =
-            "✨ Dự đoán loài hoa →";
-
-        button.disabled = false;
+        button.textContent =
+            "✦   Phân loại bằng SVM";
 
     }
 
 }
 
-</script>
 
+/* =====================================================
+   RESET
+===================================================== */
+
+document
+.getElementById("resetBtn")
+.addEventListener(
+    "click",
+    () => {
+
+        Object.entries(defaults)
+        .forEach(
+            ([key,value]) => {
+
+                sliders[key].value =
+                    value;
+
+                updateSlider(
+                    sliders[key]
+                );
+
+            }
+        );
+
+
+        predict();
+
+    }
+);
+
+
+/* =====================================================
+   PREDICT BUTTON
+===================================================== */
+
+document
+.getElementById("predictBtn")
+.addEventListener(
+    "click",
+    predict
+);
+
+</script>
 
 </body>
 
 </html>
-    """
+"""
 
 
-# ============================================================
-# HEALTH
-# ============================================================
-
+# =========================
+# HEALTH CHECK
+# =========================
 @app.get("/health")
 def health():
-
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "model": "SVM"
     }
 
 
-# ============================================================
+# =========================
 # PREDICT API
-# ============================================================
-
+# =========================
 @app.post("/predict")
 def predict(data: IrisInput):
 
     features = [[
+
         data.sepal_length,
         data.sepal_width,
         data.petal_length,
         data.petal_width
+
     ]]
 
     prediction = int(
@@ -2214,6 +2275,10 @@ def predict(data: IrisInput):
     )
 
     return {
+
         "class_id": prediction,
-        "prediction": species[prediction]
+
+        "prediction":
+            species[prediction]
+
     }
