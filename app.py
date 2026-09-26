@@ -1,29 +1,29 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import joblib
-import numpy as np
 
 # =========================
-# LOAD MODEL & CONFIG
+# LOAD MODEL
 # =========================
-try:
-    model = joblib.load("svm_model.pkl")
-except Exception as e:
-    model = None
-    print(f"⚠️ Cảnh báo: Không thể tải mô hình 'svm_model.pkl'. Lỗi: {e}")
+model = joblib.load("svm_model.pkl")
 
 app = FastAPI(
-    title="Iris AI Quantum Studio",
-    description="Nền tảng phân tích AI cao cấp tích hợp hình ảnh thực tế, đa biểu đồ và tùy biến Theme.",
-    version="4.2.0"
+    title="Iris AI Classification",
+    description="Iris flower classification using Support Vector Machine",
+    version="2.0.0"
 )
 
+
+# =========================
+# INPUT MODEL
+# =========================
 class IrisInput(BaseModel):
-    sepal_length: float = Field(..., ge=4.0, le=8.0)
-    sepal_width: float = Field(..., ge=2.0, le=4.5)
-    petal_length: float = Field(..., ge=1.0, le=7.0)
-    petal_width: float = Field(..., ge=0.1, le=2.5)
+    sepal_length: float
+    sepal_width: float
+    petal_length: float
+    petal_width: float
+
 
 species = {
     0: "Iris Setosa",
@@ -31,857 +31,2254 @@ species = {
     2: "Iris Virginica"
 }
 
+
 # =========================
-# HOME PAGE (UI)
+# HOME PAGE
 # =========================
 @app.get("/", response_class=HTMLResponse)
 def home():
+
     return """
 <!DOCTYPE html>
-<html lang="vi" data-theme="quantum">
+<html lang="vi">
 
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iris AI Quantum Studio Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<title>Iris AI Classification</title>
 
 <style>
+
+/* =====================================================
+   GLOBAL
+===================================================== */
+
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
 }
 
-:root[data-theme="quantum"] {
-    --bg:#030712;
-    --panel:rgba(15, 23, 42, 0.75);
-    --border:rgba(139, 92, 246, 0.15);
+:root{
+    --bg:#070b17;
+    --panel:rgba(17,24,39,.72);
+    --panel2:rgba(255,255,255,.055);
+    --border:rgba(255,255,255,.10);
+
     --text:#f8fafc;
     --muted:#94a3b8;
+
     --primary:#8b5cf6;
     --secondary:#06b6d4;
-    --accent:#ec4899;
     --success:#22c55e;
-    --glow: rgba(139, 92, 246, 0.25);
-}
 
-:root[data-theme="cyberpunk"] {
-    --bg:#050505;
-    --panel:rgba(20, 20, 20, 0.85);
-    --border:rgba(234, 179, 8, 0.2);
-    --text:#fef08a;
-    --muted:#a1a1aa;
-    --primary:#eab308;
-    --secondary:#ef4444;
-    --accent:#3b82f6;
-    --success:#10b981;
-    --glow: rgba(234, 179, 8, 0.25);
-}
-
-:root[data-theme="matrix"] {
-    --bg:#022c22;
-    --panel:rgba(6, 78, 59, 0.4);
-    --border:rgba(52, 211, 153, 0.2);
-    --text:#ecfdf5;
-    --muted:#6ee7b7;
-    --primary:#10b981;
-    --secondary:#34d399;
-    --accent:#f59e0b;
-    --success:#059669;
-    --glow: rgba(16, 185, 129, 0.25);
+    --shadow:
+        0 25px 80px rgba(0,0,0,.45);
 }
 
 body{
+
     min-height:100vh;
-    font-family:'Plus Jakarta Sans', sans-serif;
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
     color:var(--text);
+
     background:
-        radial-gradient(circle at 15% 15%, var(--glow), transparent 45%),
-        radial-gradient(circle at 85% 85%, rgba(6,182,212,0.1), transparent 45%),
+
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(139,92,246,.22),
+            transparent 30%
+        ),
+
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(6,182,212,.16),
+            transparent 30%
+        ),
+
         var(--bg);
+
     overflow-x:hidden;
-    transition: background 0.4s ease;
 }
 
-.ambient-glow{
+
+/* =====================================================
+   BACKGROUND PARTICLES
+===================================================== */
+
+.background{
     position:fixed;
     inset:0;
     pointer-events:none;
-    z-index:0;
     overflow:hidden;
+    z-index:0;
 }
-.glow-orb{
-    position:absolute;
-    width:500px;
-    height:500px;
-    border-radius:50%;
-    filter:blur(120px);
-    opacity:0.2;
-    animation:drift 15s infinite alternate ease-in-out;
-}
-.glow-orb.one{ background:var(--primary); top:-150px; left:-150px; }
-.glow-orb.two{ background:var(--secondary); bottom:-150px; right:-150px; animation-delay: 5s; }
 
-@keyframes drift {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(40px, 30px) scale(1.1); }
+.orb{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(80px);
+    opacity:.35;
+    animation:float 10s ease-in-out infinite;
 }
+
+.orb.one{
+    width:300px;
+    height:300px;
+    background:#7c3aed;
+    top:-100px;
+    left:-100px;
+}
+
+.orb.two{
+    width:260px;
+    height:260px;
+    background:#0891b2;
+    right:-80px;
+    bottom:-80px;
+    animation-delay:2s;
+}
+
+@keyframes float{
+
+    0%,100%{
+        transform:translate(0,0);
+    }
+
+    50%{
+        transform:translate(25px,-20px);
+    }
+}
+
+
+/* =====================================================
+   MAIN
+===================================================== */
 
 .container{
+
     position:relative;
     z-index:2;
-    width:min(1450px, 94%);
+
+    width:min(1250px,94%);
+
     margin:auto;
-    padding:24px 0 60px;
+
+    padding:30px 0 50px;
 }
 
+
+/* =====================================================
+   NAVBAR
+===================================================== */
+
 .navbar{
+
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:16px 24px;
+
+    padding:15px 20px;
+
     border:1px solid var(--border);
-    background:var(--panel);
-    backdrop-filter:blur(25px);
-    border-radius:20px;
-    box-shadow:0 15px 35px rgba(0,0,0,0.4);
+
+    background:rgba(15,23,42,.60);
+
+    backdrop-filter:blur(18px);
+
+    border-radius:18px;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,.20);
 }
 
 .logo{
+
     display:flex;
     align-items:center;
     gap:12px;
+
     font-weight:800;
-    font-size:18px;
+    font-size:17px;
 }
 
-.logo-badge{
-    width:42px;
-    height:42px;
+.logo-icon{
+
+    width:40px;
+    height:40px;
+
     display:grid;
     place-items:center;
+
     border-radius:12px;
-    background:linear-gradient(135deg, var(--primary), var(--secondary));
-    box-shadow:0 0 20px var(--glow);
-    font-size:20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    box-shadow:
+        0 8px 25px rgba(139,92,246,.35);
 }
 
-.nav-right{
-    display:flex;
-    align-items:center;
-    gap:16px;
-}
+.nav-status{
 
-.theme-switcher{
-    display:flex;
-    gap:6px;
-    background:rgba(0,0,0,0.2);
-    padding:4px;
-    border-radius:12px;
-    border:1px solid var(--border);
-}
-
-.theme-btn{
-    padding:6px 12px;
-    border:none;
-    background:transparent;
-    color:var(--muted);
-    font-size:11px;
-    font-weight:700;
-    border-radius:8px;
-    cursor:pointer;
-    transition:all 0.2s ease;
-}
-
-.theme-btn.active, .theme-btn:hover{
-    background:var(--primary);
-    color:#fff;
-    box-shadow:0 0 10px var(--glow);
-}
-
-.status-badge{
     display:flex;
     align-items:center;
     gap:8px;
-    font-size:12px;
-    font-weight:600;
-    padding:6px 14px;
-    border-radius:30px;
-    background:rgba(34,197,94,0.1);
-    border:1px solid rgba(34,197,94,0.3);
-    color:var(--success);
+
+    color:var(--muted);
+
+    font-size:13px;
 }
 
 .status-dot{
-    width:7px;
-    height:7px;
+
+    width:8px;
+    height:8px;
+
     border-radius:50%;
+
     background:var(--success);
-    box-shadow:0 0 10px var(--success);
-    animation:blink 2s infinite;
+
+    box-shadow:
+        0 0 12px var(--success);
+
+    animation:pulse 2s infinite;
 }
 
-@keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.3;} }
+@keyframes pulse{
 
-.dashboard{
-    display:grid;
-    grid-template-columns: 1fr 1.15fr;
-    gap:24px;
-    margin-top:24px;
+    0%,100%{
+        opacity:1;
+    }
+
+    50%{
+        opacity:.45;
+    }
 }
 
-.column{
-    display:flex;
-    flex-direction:column;
-    gap:24px;
-}
 
-.card{
-    border:1px solid var(--border);
-    background:var(--panel);
-    backdrop-filter:blur(30px);
-    border-radius:24px;
-    box-shadow:0 20px 40px rgba(0,0,0,0.4);
-    padding:24px;
-    transition:transform 0.3s ease, border-color 0.3s ease;
-}
+/* =====================================================
+   HERO
+===================================================== */
 
-.card:hover{
-    border-color:var(--primary);
-}
+.hero{
 
-.card-title{
-    font-size:16px;
-    font-weight:800;
-}
-
-.card-desc{
-    color:var(--muted);
-    font-size:12px;
-    margin-top:3px;
-    margin-bottom:18px;
-}
-
-.slider-group{
-    margin-top:16px;
-}
-
-.slider-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:12px;
-    font-weight:600;
-    margin-bottom:6px;
-}
-
-.slider-val{
-    padding:3px 8px;
-    border-radius:6px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid var(--border);
-    color:var(--primary);
-    font-weight:700;
-    font-size:11px;
-}
-
-input[type="range"]{
-    appearance:none;
-    width:100%;
-    height:6px;
-    border-radius:10px;
-    outline:none;
-    cursor:pointer;
-    background:linear-gradient(90deg, var(--primary) var(--progress), rgba(255,255,255,0.1) var(--progress));
-}
-
-input[type="range"]::-webkit-slider-thumb{
-    appearance:none;
-    width:16px;
-    height:16px;
-    border-radius:50%;
-    background:#fff;
-    border:3px solid var(--primary);
-    box-shadow:0 0 12px var(--primary);
-    transition:transform 0.2s;
-}
-
-input[type="range"]::-webkit-slider-thumb:hover{
-    transform:scale(1.25);
-}
-
-.presets-heading{
-    font-size:10px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    color:var(--muted);
-    margin-top:20px;
-    margin-bottom:8px;
-}
-
-.presets-grid{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:8px;
-}
-
-.preset-chip{
-    padding:8px 4px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,0.02);
-    color:var(--text);
-    cursor:pointer;
     text-align:center;
-    transition:all 0.2s;
+
+    padding:65px 20px 45px;
+
+    animation:fadeUp .8s ease;
 }
 
-.preset-chip:hover{
-    background:var(--primary);
-    color:#fff;
-    border-color:var(--primary);
-    transform:translateY(-2px);
-    box-shadow:0 5px 15px var(--glow);
-}
+.badge{
 
-.preset-chip span{
-    display:block;
-    font-size:11px;
+    display:inline-flex;
+
+    padding:7px 14px;
+
+    border-radius:100px;
+
+    border:1px solid rgba(139,92,246,.30);
+
+    background:rgba(139,92,246,.10);
+
+    color:#c4b5fd;
+
+    font-size:12px;
+
     font-weight:700;
-    margin-top:2px;
+
+    letter-spacing:.08em;
+
+    text-transform:uppercase;
 }
 
-.action-row{
-    display:grid;
-    grid-template-columns: 1fr auto auto;
-    gap:8px;
-    margin-top:20px;
-}
+.hero h1{
 
-.btn-predict{
-    padding:12px;
-    border:none;
-    border-radius:12px;
-    background:linear-gradient(135deg, var(--primary), var(--secondary));
-    color:#fff;
-    font-weight:800;
-    font-size:13px;
-    cursor:pointer;
-    box-shadow:0 8px 25px var(--glow);
-    transition:transform 0.2s;
-}
-.btn-predict:hover{ transform:translateY(-2px); }
+    margin-top:18px;
 
-.btn-icon{
-    width:44px;
-    height:44px;
-    border:1px solid var(--border);
-    border-radius:12px;
-    background:rgba(255,255,255,0.03);
-    color:var(--text);
-    cursor:pointer;
-    font-size:15px;
-    display:grid;
-    place-items:center;
-    transition:all 0.2s;
-}
-.btn-icon:hover{
-    background:rgba(255,255,255,0.1);
-    border-color:var(--primary);
-}
+    font-size:
+        clamp(38px,6vw,68px);
 
-.result-box{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    padding:14px;
-    border-radius:16px;
-    border:1px solid var(--border);
-    background:rgba(0,0,0,0.2);
-}
+    line-height:1;
 
-.flower-img-box{
-    width:72px;
-    height:72px;
-    border-radius:12px;
-    overflow:hidden;
-    border:1px solid var(--border);
-    flex-shrink:0;
-    background:#111827;
-}
-
-.flower-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.flower-img-box img:hover {
-    transform: scale(1.1);
-}
-
-.result-meta h3{
-    font-size:20px;
     font-weight:900;
-    background:linear-gradient(90deg, #fff, var(--primary), var(--secondary));
+
+    letter-spacing:-.05em;
+
+    background:
+        linear-gradient(
+            110deg,
+            #fff,
+            #c4b5fd,
+            #67e8f9
+        );
+
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
 }
 
-.result-meta p{
-    font-size:12px;
+.hero p{
+
+    max-width:650px;
+
+    margin:20px auto 0;
+
     color:var(--muted);
-    margin-top:2px;
-    line-height:1.4;
+
+    line-height:1.8;
+
+    font-size:15px;
 }
 
-.latency-tag{
-    display:inline-block;
+
+/* =====================================================
+   DASHBOARD
+===================================================== */
+
+.dashboard{
+
+    display:grid;
+
+    grid-template-columns:
+        minmax(0,1.05fr)
+        minmax(350px,.95fr);
+
+    gap:22px;
+
+    animation:fadeUp 1s ease;
+}
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.card{
+
+    border:1px solid var(--border);
+
+    background:var(--panel);
+
+    backdrop-filter:blur(22px);
+
+    border-radius:26px;
+
+    box-shadow:var(--shadow);
+
+    overflow:hidden;
+}
+
+.card-header{
+
+    padding:25px 26px 10px;
+}
+
+.card-title{
+
+    font-size:18px;
+
+    font-weight:800;
+}
+
+.card-subtitle{
+
     margin-top:6px;
-    font-size:10px;
-    font-weight:700;
-    padding:2px 8px;
-    border-radius:6px;
-    background:rgba(139,92,246,0.15);
-    color:var(--primary);
+
+    color:var(--muted);
+
+    font-size:13px;
+}
+
+
+/* =====================================================
+   SLIDERS
+===================================================== */
+
+.controls{
+
+    padding:10px 26px 26px;
+}
+
+.slider-item{
+
+    margin-top:25px;
+}
+
+.slider-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:12px;
+}
+
+.slider-name{
+
+    font-size:14px;
+
+    font-weight:650;
+}
+
+.slider-value{
+
+    min-width:67px;
+
+    text-align:center;
+
+    padding:7px 10px;
+
+    border-radius:9px;
+
+    background:
+        rgba(139,92,246,.12);
+
+    border:1px solid
+        rgba(139,92,246,.25);
+
+    color:#c4b5fd;
+
+    font-weight:800;
+
+    font-variant-numeric:tabular-nums;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.slider-value.changed{
+
+    transform:scale(1.10);
+
+    background:
+        rgba(139,92,246,.22);
+}
+
+
+/* RANGE */
+
+input[type="range"]{
+
+    appearance:none;
+
+    width:100%;
+
+    height:6px;
+
+    border-radius:20px;
+
+    outline:none;
+
+    cursor:pointer;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            var(--primary) var(--progress),
+            rgba(255,255,255,.10) var(--progress)
+        );
+
+    transition:
+        background .2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb{
+
+    appearance:none;
+
+    width:21px;
+    height:21px;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    border:4px solid var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(139,92,246,.12),
+        0 5px 15px rgba(0,0,0,.35);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover{
+
+    transform:scale(1.18);
+
+    box-shadow:
+        0 0 0 7px rgba(139,92,246,.13),
+        0 5px 20px rgba(0,0,0,.4);
+}
+
+input[type="range"]::-moz-range-thumb{
+
+    width:17px;
+    height:17px;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    border:4px solid var(--primary);
+}
+
+
+/* =====================================================
+   PROFILE
+===================================================== */
+
+.profile{
+
+    margin-top:28px;
+
+    padding:16px;
+
+    border-radius:17px;
+
+    background:
+        rgba(255,255,255,.035);
+
     border:1px solid var(--border);
 }
 
-.charts-grid{
+.profile-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:12px;
+
+    font-size:12px;
+
+    color:var(--muted);
+}
+
+.profile-bar{
+
+    height:8px;
+
+    border-radius:20px;
+
+    background:rgba(255,255,255,.08);
+
+    overflow:hidden;
+}
+
+.profile-fill{
+
+    width:35%;
+
+    height:100%;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    transition:
+        width .6s cubic-bezier(.22,1,.36,1);
+}
+
+
+/* =====================================================
+   PRESETS
+===================================================== */
+
+.presets-title{
+
+    margin-top:24px;
+
+    font-size:12px;
+
+    color:var(--muted);
+}
+
+.presets{
+
     display:grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap:16px;
-    margin-top:16px;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:9px;
+
+    margin-top:10px;
 }
 
-.chart-wrapper{
-    height:190px;
+.preset{
+
+    padding:13px 7px;
+
+    border-radius:13px;
+
+    border:1px solid var(--border);
+
+    background:
+        rgba(255,255,255,.035);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:
+        transform .2s ease,
+        border .2s ease,
+        background .2s ease;
+}
+
+.preset:hover{
+
+    transform:translateY(-3px);
+
+    border-color:
+        rgba(139,92,246,.45);
+
+    background:
+        rgba(139,92,246,.10);
+}
+
+.preset-icon{
+
+    font-size:23px;
+
+    margin-bottom:6px;
+}
+
+.preset-name{
+
+    font-size:11px;
+
+    font-weight:700;
+}
+
+.preset-desc{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--muted);
+
+    font-size:9px;
+}
+
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+.actions{
+
+    display:grid;
+
+    grid-template-columns:1fr auto;
+
+    gap:10px;
+
+    margin-top:20px;
+}
+
+.predict{
+
+    min-height:50px;
+
+    border:none;
+
+    border-radius:13px;
+
+    background:
+        linear-gradient(
+            110deg,
+            #7c3aed,
+            #4f46e5,
+            #0891b2
+        );
+
+    color:white;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+    box-shadow:
+        0 10px 25px rgba(79,70,229,.30);
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.predict:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 15px 35px rgba(79,70,229,.40);
+}
+
+.predict:active{
+
+    transform:scale(.98);
+}
+
+.reset{
+
+    width:50px;
+
+    border:1px solid var(--border);
+
+    border-radius:13px;
+
+    background:
+        rgba(255,255,255,.05);
+
+    color:#cbd5e1;
+
+    cursor:pointer;
+
+    font-size:18px;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.reset:hover{
+
+    transform:rotate(-25deg);
+
+    background:
+        rgba(255,255,255,.10);
+}
+
+
+/* =====================================================
+   RESULT CARD
+===================================================== */
+
+.result-card{
+
+    min-height:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    padding:30px;
+}
+
+.result-label{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    letter-spacing:.12em;
+
+    text-transform:uppercase;
+
+    font-weight:800;
+}
+
+
+/* FLOWER */
+
+.flower-container{
+
+    width:min(100%,390px);
+
+    aspect-ratio:1.18;
+
+    margin:20px 0;
+
+    border-radius:23px;
+
+    overflow:hidden;
+
     position:relative;
+
+    background:#111827;
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.40);
 }
 
-.history-scroll{
-    max-height:150px;
-    overflow-y:auto;
-    margin-top:8px;
+.flower-container::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.35),
+            transparent 45%
+        );
+
+    pointer-events:none;
 }
-.styled-table{
+
+.flower-container img{
+
     width:100%;
-    border-collapse:collapse;
+    height:100%;
+
+    object-fit:cover;
+
+    display:block;
+
+    transition:
+        transform .7s cubic-bezier(.22,1,.36,1),
+        opacity .4s ease;
+}
+
+.flower-container img.animate{
+
+    animation:
+        flowerReveal .75s
+        cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes flowerReveal{
+
+    0%{
+
+        opacity:0;
+
+        transform:
+            scale(1.12)
+            rotate(1deg);
+    }
+
+    100%{
+
+        opacity:1;
+
+        transform:
+            scale(1)
+            rotate(0);
+    }
+}
+
+
+/* RESULT */
+
+.result-name{
+
+    font-size:32px;
+
+    font-weight:900;
+
+    letter-spacing:-.03em;
+
+    background:
+        linear-gradient(
+            90deg,
+            #fff,
+            #c4b5fd,
+            #67e8f9
+        );
+
+    -webkit-background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+}
+
+.result-description{
+
+    max-width:390px;
+
+    margin-top:8px;
+
+    color:var(--muted);
+
+    line-height:1.65;
+
+    font-size:13px;
+}
+
+
+/* =====================================================
+   RESULT DATA
+===================================================== */
+
+.data-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    width:100%;
+
+    gap:7px;
+
+    margin-top:23px;
+}
+
+.data-box{
+
+    padding:10px 5px;
+
+    border-radius:11px;
+
+    background:
+        rgba(255,255,255,.04);
+
+    border:1px solid var(--border);
+}
+
+.data-value{
+
+    font-size:14px;
+
+    font-weight:800;
+}
+
+.data-label{
+
+    margin-top:3px;
+
+    font-size:8px;
+
+    color:var(--muted);
+
+    text-transform:uppercase;
+}
+
+
+/* =====================================================
+   API STATUS
+===================================================== */
+
+.api-status{
+
+    margin-top:20px;
+
+    padding:9px 13px;
+
+    border-radius:100px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    background:
+        rgba(34,197,94,.08);
+
+    border:
+        1px solid rgba(34,197,94,.20);
+
+    color:#86efac;
+
     font-size:11px;
 }
-.styled-table th, .styled-table td{
-    padding:8px 10px;
-    text-align:left;
-    border-bottom:1px solid var(--border);
-}
-.styled-table th{
-    color:var(--muted);
-    font-weight:700;
-    position:sticky;
-    top:0;
-    background:var(--bg);
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+.error{
+
+    min-height:18px;
+
+    margin-top:8px;
+
+    color:#fca5a5;
+
+    font-size:11px;
 }
 
-#toast{
-    position:fixed;
-    bottom:24px;
-    right:24px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    backdrop-filter:blur(20px);
-    padding:12px 20px;
-    border-radius:14px;
-    font-size:12px;
-    font-weight:600;
-    box-shadow:0 15px 35px rgba(0,0,0,0.5);
-    transform:translateY(100px);
-    opacity:0;
-    transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index:1000;
-}
-#toast.show{
-    transform:translateY(0);
-    opacity:1;
+
+/* =====================================================
+   ANIMATION
+===================================================== */
+
+.fade-up{
+
+    animation:
+        fadeUp .7s
+        cubic-bezier(.22,1,.36,1);
 }
 
-@media(max-width:1000px){
-    .dashboard{ grid-template-columns:1fr; }
-    .charts-grid{ grid-template-columns:1fr; }
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(18px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+    }
 }
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:850px){
+
+    .dashboard{
+
+        grid-template-columns:1fr;
+    }
+
+    .result-card{
+
+        min-height:500px;
+    }
+}
+
+@media(max-width:500px){
+
+    .container{
+
+        width:94%;
+    }
+
+    .hero{
+
+        padding:
+            45px 10px 30px;
+    }
+
+    .hero h1{
+
+        font-size:40px;
+    }
+
+    .card-header,
+    .controls{
+
+        padding-left:19px;
+        padding-right:19px;
+    }
+
+    .presets{
+
+        gap:5px;
+    }
+
+    .result-name{
+
+        font-size:27px;
+    }
+}
+
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+    *,
+    *::before,
+    *::after{
+
+        animation-duration:.01ms!important;
+
+        transition-duration:.01ms!important;
+    }
+}
+
 </style>
+
 </head>
+
 
 <body>
 
-<div class="ambient-glow">
-    <div class="glow-orb one"></div>
-    <div class="glow-orb two"></div>
+
+<!-- BACKGROUND -->
+
+<div class="background">
+
+    <div class="orb one"></div>
+
+    <div class="orb two"></div>
+
 </div>
+
 
 <div class="container">
-    <nav class="navbar">
-        <div class="logo">
-            <div class="logo-badge">⚡</div>
-            <span>Iris AI Quantum Studio <small style="color:var(--primary); font-weight:500;">v4.3</small></span>
-        </div>
-        <div class="nav-right">
-            <div class="theme-switcher">
-                <button class="theme-btn active" onclick="setTheme('quantum', event)">Quantum</button>
-                <button class="theme-btn" onclick="setTheme('cyberpunk', event)">Cyberpunk</button>
-                <button class="theme-btn" onclick="setTheme('matrix', event)">Matrix</button>
-            </div>
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <span>SVM Active</span>
-            </div>
-        </div>
-    </nav>
 
-    <main class="dashboard">
-        <!-- CỘT ĐIỀU KHIỂN -->
-        <div class="column">
-            <section class="card">
-                <div class="card-title">Bộ điều khiển đặc trưng hình thái</div>
-                <div class="card-desc">Tùy chỉnh thông số sinh học để mô hình AI phân loại thời gian thực</div>
 
-                <div class="slider-group">
-                    <div class="slider-top">
-                        <span>Chiều dài đài hoa (Sepal Length)</span>
-                        <span class="slider-val" id="sepal_length_val">5.1 cm</span>
-                    </div>
-                    <input id="sepal_length" type="range" min="4.0" max="8.0" step="0.1" value="5.1">
-                </div>
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
 
-                <div class="slider-group">
-                    <div class="slider-top">
-                        <span>Chiều rộng đài hoa (Sepal Width)</span>
-                        <span class="slider-val" id="sepal_width_val">3.5 cm</span>
-                    </div>
-                    <input id="sepal_width" type="range" min="2.0" max="4.5" step="0.1" value="3.5">
-                </div>
+<nav class="navbar">
 
-                <div class="slider-group">
-                    <div class="slider-top">
-                        <span>Chiều dài cánh hoa (Petal Length)</span>
-                        <span class="slider-val" id="petal_length_val">1.4 cm</span>
-                    </div>
-                    <input id="petal_length" type="range" min="1.0" max="7.0" step="0.1" value="1.4">
-                </div>
+    <div class="logo">
 
-                <div class="slider-group">
-                    <div class="slider-top">
-                        <span>Chiều rộng cánh hoa (Petal Width)</span>
-                        <span class="slider-val" id="petal_width_val">0.2 cm</span>
-                    </div>
-                    <input id="petal_width" type="range" min="0.1" max="2.5" step="0.1" value="0.2">
-                </div>
-
-                <div class="presets-heading">Mẫu chuẩn sinh học</div>
-                <div class="presets-grid">
-                    <button type="button" class="preset-chip" onclick="loadPreset('setosa')">🌱<span>Setosa</span></button>
-                    <button type="button" class="preset-chip" onclick="loadPreset('versicolor')">🌷<span>Versicolor</span></button>
-                    <button type="button" class="preset-chip" onclick="loadPreset('virginica')">🌸<span>Virginica</span></button>
-                </div>
-
-                <div class="action-row">
-                    <button type="button" class="btn-predict" id="predictBtn" onclick="runPrediction()">✦ Phân tích AI ngay</button>
-                    <button type="button" class="btn-icon" onclick="resetParams()" title="Đặt lại">↻</button>
-                    <button type="button" class="btn-icon" onclick="exportCSV()" title="Xuất CSV">📥</button>
-                </div>
-            </section>
+        <div class="logo-icon">
+            🌸
         </div>
 
-        <!-- CỘT KẾT QUẢ & ĐỒ THỊ -->
-        <div class="column">
-            <section class="card">
-                <div class="card-title">Kết quả phân tích hình thái học</div>
-                <div class="card-desc">Độ tin cậy từ thuật toán Support Vector Machine</div>
+        <span>Iris AI</span>
 
-                <div class="result-box">
-                    <div class="flower-img-box">
-                        <img id="flowerImg" src="https://images.unsplash.com/photo-1561564757-d6d1d293e449?auto=format&fit=crop&w=300&q=80" alt="Iris Real Photo">
-                    </div>
-                    <div class="result-meta">
-                        <h3 id="resultName">Iris Setosa</h3>
-                        <p id="resultDesc">Đặc trưng cánh hoa nhỏ, ngắn, thích hợp điều kiện ôn đới.</p>
-                        <span class="latency-tag" id="latencyTag">⚡ Latency: 12ms</span>
-                    </div>
-                </div>
+    </div>
 
-                <div class="charts-grid">
-                    <div class="chart-wrapper">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-            </section>
 
-            <section class="card">
-                <div class="card-title">Lịch sử phiên làm việc</div>
-                <div class="card-desc">Lưu trữ các mẫu phân tích gần đây</div>
-                <div class="history-scroll">
-                    <table class="styled-table">
-                        <thead>
-                            <tr>
-                                <th>Loài</th>
-                                <th>SL / SW</th>
-                                <th>PL / PW</th>
-                                <th>Thời gian</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyBody">
-                            <tr><td colspan="4" style="color:var(--muted); text-align:center;">Chưa có dữ liệu lịch sử</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+    <div class="nav-status">
+
+        <span class="status-dot"></span>
+
+        SVM Model Online
+
+    </div>
+
+</nav>
+
+
+
+<!-- =====================================================
+     HERO
+===================================================== -->
+
+<section class="hero">
+
+    <div class="badge">
+        ✦ Artificial Intelligence · Machine Learning
+    </div>
+
+
+    <h1>
+        Iris AI
+    </h1>
+
+
+    <p>
+
+        Hệ thống phân loại hoa Iris sử dụng
+        <strong>Support Vector Machine</strong>.
+        Điều chỉnh các đặc trưng hình thái và
+        khám phá kết quả dự đoán theo thời gian thực.
+
+    </p>
+
+</section>
+
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<main class="dashboard">
+
+
+<!-- =====================================================
+     LEFT
+===================================================== -->
+
+<section class="card">
+
+
+    <div class="card-header">
+
+        <div class="card-title">
+            Phân tích hình thái
         </div>
-    </main>
+
+        <div class="card-subtitle">
+
+            Điều chỉnh thông số bằng các thanh trượt
+
+        </div>
+
+    </div>
+
+
+
+    <div class="controls">
+
+
+<!-- SEPAL LENGTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều dài đài hoa
+</span>
+
+<span
+    class="slider-value"
+    id="sepal_length_value">
+    5.1 cm
+</span>
+
 </div>
 
-<div id="toast">✅ Đã cập nhật mô hình thành công!</div>
+
+<input
+    id="sepal_length"
+    type="range"
+    min="4"
+    max="8"
+    step="0.1"
+    value="5.1"
+>
+
+
+</div>
+
+
+
+<!-- SEPAL WIDTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều rộng đài hoa
+</span>
+
+<span
+    class="slider-value"
+    id="sepal_width_value">
+    3.5 cm
+</span>
+
+</div>
+
+
+<input
+    id="sepal_width"
+    type="range"
+    min="2"
+    max="4.5"
+    step="0.1"
+    value="3.5"
+>
+
+
+</div>
+
+
+
+<!-- PETAL LENGTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều dài cánh hoa
+</span>
+
+<span
+    class="slider-value"
+    id="petal_length_value">
+    1.4 cm
+</span>
+
+</div>
+
+
+<input
+    id="petal_length"
+    type="range"
+    min="1"
+    max="7"
+    step="0.1"
+    value="1.4"
+>
+
+
+</div>
+
+
+
+<!-- PETAL WIDTH -->
+
+<div class="slider-item">
+
+<div class="slider-header">
+
+<span class="slider-name">
+    Chiều rộng cánh hoa
+</span>
+
+<span
+    class="slider-value"
+    id="petal_width_value">
+    0.2 cm
+</span>
+
+</div>
+
+
+<input
+    id="petal_width"
+    type="range"
+    min="0.1"
+    max="2.5"
+    step="0.1"
+    value="0.2"
+>
+
+
+</div>
+
+
+
+<!-- PROFILE -->
+
+<div class="profile">
+
+    <div class="profile-header">
+
+        <span>
+            Morphology Profile
+        </span>
+
+        <span id="profileText">
+            Compact
+        </span>
+
+    </div>
+
+    <div class="profile-bar">
+
+        <div
+            id="profileFill"
+            class="profile-fill">
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- PRESETS -->
+
+<div class="presets-title">
+
+    Chọn mẫu nhanh
+
+</div>
+
+
+<div class="presets">
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="setosa">
+
+    <div class="preset-icon">
+        🌱
+    </div>
+
+    <div class="preset-name">
+        Setosa
+    </div>
+
+    <span class="preset-desc">
+        Nhỏ · ngắn
+    </span>
+
+</button>
+
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="versicolor">
+
+    <div class="preset-icon">
+        🌷
+    </div>
+
+    <div class="preset-name">
+        Versicolor
+    </div>
+
+    <span class="preset-desc">
+        Trung bình
+    </span>
+
+</button>
+
+
+
+<button
+    type="button"
+    class="preset"
+    data-type="virginica">
+
+    <div class="preset-icon">
+        🌸
+    </div>
+
+    <div class="preset-name">
+        Virginica
+    </div>
+
+    <span class="preset-desc">
+        Lớn · dài
+    </span>
+
+</button>
+
+
+</div>
+
+
+
+<!-- ACTIONS -->
+
+<div class="actions">
+
+
+<button
+    type="button"
+    id="predictBtn"
+    class="predict">
+
+    ✦ &nbsp; Phân loại bằng SVM
+
+</button>
+
+
+<button
+    type="button"
+    id="resetBtn"
+    class="reset"
+    title="Đặt lại">
+
+    ↻
+
+</button>
+
+
+</div>
+
+
+<div
+    id="error"
+    class="error">
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- =====================================================
+     RIGHT RESULT
+===================================================== -->
+
+<section class="card result-card">
+
+
+<div class="result-label">
+
+    Kết quả dự đoán
+
+</div>
+
+
+<div class="flower-container">
+
+    <img
+        id="flowerImage"
+        src="https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
+        alt="Iris Setosa"
+    >
+
+</div>
+
+
+<div
+    id="resultName"
+    class="result-name">
+
+    Iris Setosa
+
+</div>
+
+
+<div
+    id="resultDescription"
+    class="result-description">
+
+    Hoa Iris Setosa thường có
+    cánh hoa ngắn và hẹp,
+    kích thước tổng thể nhỏ hơn
+    so với các loài Iris còn lại.
+
+</div>
+
+
+
+<!-- DATA -->
+
+<div class="data-grid">
+
+
+<div class="data-box">
+
+    <div
+        id="dataSL"
+        class="data-value">
+        5.1
+    </div>
+
+    <div class="data-label">
+        Sepal L
+    </div>
+
+</div>
+
+
+<div class="data-box">
+
+    <div
+        id="dataSW"
+        class="data-value">
+        3.5
+    </div>
+
+    <div class="data-label">
+        Sepal W
+    </div>
+
+</div>
+
+
+<div class="data-box">
+
+    <div
+        id="dataPL"
+        class="data-value">
+        1.4
+    </div>
+
+    <div class="data-label">
+        Petal L
+    </div>
+
+</div>
+
+
+<div class="data-box">
+
+    <div
+        id="dataPW"
+        class="data-value">
+        0.2
+    </div>
+
+    <div class="data-label">
+        Petal W
+    </div>
+
+</div>
+
+
+</div>
+
+
+
+<div class="api-status">
+
+    <span class="status-dot"></span>
+
+    <span id="apiStatus">
+        SVM prediction ready
+    </span>
+
+</div>
+
+
+</section>
+
+
+</main>
+
+
+</div>
+
+
 
 <script>
-function setTheme(name, evt) {
-    document.documentElement.setAttribute('data-theme', name);
-    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-    if(evt && evt.target) evt.target.classList.add('active');
-    showToast(`Đã chuyển sang giao diện ${name.toUpperCase()}`);
-}
+
+/* =====================================================
+   IRIS AI FRONTEND
+===================================================== */
 
 const sliders = {
-    sepal_length: document.getElementById("sepal_length"),
-    sepal_width: document.getElementById("sepal_width"),
-    petal_length: document.getElementById("petal_length"),
-    petal_width: document.getElementById("petal_width")
+
+    sepal_length:
+        document.getElementById("sepal_length"),
+
+    sepal_width:
+        document.getElementById("sepal_width"),
+
+    petal_length:
+        document.getElementById("petal_length"),
+
+    petal_width:
+        document.getElementById("petal_width")
 };
+
+
+const defaults = {
+
+    sepal_length:5.1,
+
+    sepal_width:3.5,
+
+    petal_length:1.4,
+
+    petal_width:0.2
+
+};
+
 
 const presets = {
-    setosa: { sepal_length: 5.1, sepal_width: 3.5, petal_length: 1.4, petal_width: 0.2 },
-    versicolor: { sepal_length: 6.0, sepal_width: 2.9, petal_length: 4.5, petal_width: 1.5 },
-    virginica: { sepal_length: 6.5, sepal_width: 3.0, petal_length: 5.5, petal_width: 1.8 }
+
+    setosa:{
+
+        sepal_length:5.1,
+        sepal_width:3.5,
+        petal_length:1.4,
+        petal_width:0.2
+
+    },
+
+    versicolor:{
+
+        sepal_length:6.0,
+        sepal_width:2.9,
+        petal_length:4.5,
+        petal_width:1.5
+
+    },
+
+    virginica:{
+
+        sepal_length:6.5,
+        sepal_width:3.0,
+        petal_length:5.5,
+        petal_width:1.8
+
+    }
+
 };
 
-// Sử dụng hình ảnh thực tế ngoài đời từ kho ảnh chất lượng cao
+
 const flowers = {
-    0: { 
-        name: "Iris Setosa", 
-        desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", 
-        img: "https://images.unsplash.com/photo-1561564757-d6d1d293e449?auto=format&fit=crop&w=300&q=80" 
+
+    0:{
+
+        name:"Iris Setosa",
+
+        description:
+            "Hoa Iris Setosa thường có cánh hoa ngắn và hẹp, kích thước tổng thể nhỏ hơn so với các loài Iris còn lại.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_setosa.JPG"
+
     },
-    1: { 
-        name: "Iris Versicolor", 
-        desc: "Kích thước trung gian, màu sắc chuyển biến tinh tế.", 
-        img: "https://images.unsplash.com/photo-1582885996996-e3491ed1b56c?auto=format&fit=crop&w=300&q=80" 
+
+    1:{
+
+        name:"Iris Versicolor",
+
+        description:
+            "Iris Versicolor có đặc trưng hình thái ở mức trung gian, với kích thước cánh hoa lớn hơn Setosa.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_versicolor.jpg"
+
     },
-    2: { 
-        name: "Iris Virginica", 
-        desc: "Kích thước lớn nhất, cánh hoa rộng và dài.", 
-        img: "https://images.unsplash.com/photo-1621307641215-28ddc8702f23?auto=format&fit=crop&w=300&q=80" 
+
+    2:{
+
+        name:"Iris Virginica",
+
+        description:
+            "Iris Virginica thường có cánh hoa dài và rộng, với kích thước lớn hơn hai loài Iris còn lại.",
+
+        image:
+            "https://commons.wikimedia.org/wiki/Special:FilePath/Iris_virginica.jpg"
+
     }
+
 };
 
-const barCtx = document.getElementById('barChart').getContext('2d');
-const barChart = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-        labels: ['Setosa', 'Versicolor', 'Virginica'],
-        datasets: [{
-            data: [100, 0, 0],
-            backgroundColor: ['#8b5cf6', '#06b6d4', '#22c55e'],
-            borderRadius: 6
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true, max: 100, ticks: { color: '#94a3b8', font: {size: 10} }, grid: { color: 'rgba(255,255,255,0.04)' } },
-            x: { ticks: { color: '#f8fafc', font: {size: 10} }, grid: { display: false } }
-        }
-    }
-});
 
-const radarCtx = document.getElementById('radarChart').getContext('2d');
-const radarChart = new Chart(radarCtx, {
-    type: 'radar',
-    data: {
-        labels: ['Sepal L.', 'Sepal W.', 'Petal L.', 'Petal W.'],
-        datasets: [{
-            label: 'Đặc trưng hiện tại',
-            data: [5.1, 3.5, 1.4, 0.2],
-            backgroundColor: 'rgba(139, 92, 246, 0.2)',
-            borderColor: '#8b5cf6',
-            borderWidth: 2,
-            pointRadius: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            r: {
-                ticks: { display: false, max: 8 },
-                grid: { color: 'rgba(255,255,255,0.08)' },
-                angleLines: { color: 'rgba(255,255,255,0.08)' },
-                pointLabels: { color: '#94a3b8', font: { size: 10 } }
+/* =====================================================
+   UPDATE SLIDER
+===================================================== */
+
+function updateSlider(element){
+
+    const min =
+        Number(element.min);
+
+    const max =
+        Number(element.max);
+
+    const value =
+        Number(element.value);
+
+
+    const progress =
+        ((value-min)/(max-min))*100;
+
+
+    element.style
+        .setProperty(
+            "--progress",
+            progress + "%"
+        );
+
+
+    const id =
+        element.id;
+
+
+    const valueBox =
+        document.getElementById(
+            id + "_value"
+        );
+
+
+    if(valueBox){
+
+        valueBox.textContent =
+            value.toFixed(1) + " cm";
+
+
+        valueBox.classList.remove(
+            "changed"
+        );
+
+
+        void valueBox.offsetWidth;
+
+
+        valueBox.classList.add(
+            "changed"
+        );
+
+    }
+
+
+    updateData();
+
+    updateProfile();
+
+}
+
+
+/* =====================================================
+   UPDATE DATA
+===================================================== */
+
+function updateData(){
+
+    document.getElementById("dataSL")
+        .textContent =
+        Number(
+            sliders.sepal_length.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataSW")
+        .textContent =
+        Number(
+            sliders.sepal_width.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataPL")
+        .textContent =
+        Number(
+            sliders.petal_length.value
+        ).toFixed(1);
+
+
+    document.getElementById("dataPW")
+        .textContent =
+        Number(
+            sliders.petal_width.value
+        ).toFixed(1);
+
+}
+
+
+/* =====================================================
+   MORPHOLOGY PROFILE
+===================================================== */
+
+function updateProfile(){
+
+    const petalLength =
+        Number(
+            sliders.petal_length.value
+        );
+
+    const petalWidth =
+        Number(
+            sliders.petal_width.value
+        );
+
+
+    let score =
+        ((petalLength-1)/6)*70
+        +
+        ((petalWidth-.1)/2.4)*30;
+
+
+    score =
+        Math.max(
+            0,
+            Math.min(100,score)
+        );
+
+
+    document.getElementById(
+        "profileFill"
+    ).style.width =
+        score + "%";
+
+
+    let text = "Compact";
+
+
+    if(score > 70){
+
+        text = "Large";
+
+    }
+
+    else if(score > 40){
+
+        text = "Medium";
+
+    }
+
+
+    document.getElementById(
+        "profileText"
+    ).textContent =
+        text;
+
+}
+
+
+/* =====================================================
+   INIT
+===================================================== */
+
+Object.values(sliders).forEach(
+    slider => {
+
+        updateSlider(slider);
+
+        slider.addEventListener(
+            "input",
+            () => {
+
+                updateSlider(slider);
+
             }
-        }
+        );
+
     }
+);
+
+
+/* =====================================================
+   PRESET
+===================================================== */
+
+document
+.querySelectorAll(".preset")
+.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            const type =
+                button.dataset.type;
+
+
+            const data =
+                presets[type];
+
+
+            Object.entries(data)
+            .forEach(
+                ([key,value]) => {
+
+                    sliders[key].value =
+                        value;
+
+                    updateSlider(
+                        sliders[key]
+                    );
+
+                }
+            );
+
+
+            predict();
+
+        }
+    );
+
 });
 
-function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2200);
-}
 
-function updateSliderUI(el) {
-    const min = Number(el.min), max = Number(el.max), val = Number(el.value);
-    el.style.setProperty("--progress", ((val - min) / (max - min)) * 100 + "%");
-    document.getElementById(el.id + "_val").textContent = val.toFixed(1) + " cm";
-}
+/* =====================================================
+   PREDICT
+===================================================== */
 
-Object.values(sliders).forEach(s => {
-    updateSliderUI(s);
-    s.addEventListener("input", () => {
-        updateSliderUI(s);
-        radarChart.data.datasets[0].data = [
-            Number(sliders.sepal_length.value),
-            Number(sliders.sepal_width.value),
-            Number(sliders.petal_length.value),
-            Number(sliders.petal_width.value)
-        ];
-        radarChart.update();
-    });
-});
+async function predict(){
 
-function loadPreset(type) {
-    const d = presets[type];
-    Object.entries(d).forEach(([k, v]) => {
-        sliders[k].value = v;
-        updateSliderUI(sliders[k]);
-    });
-    radarChart.data.datasets[0].data = [d.sepal_length, d.sepal_width, d.petal_length, d.petal_width];
-    radarChart.update();
-    runPrediction();
-}
+    const button =
+        document.getElementById(
+            "predictBtn"
+        );
 
-let historyList = [];
+    const error =
+        document.getElementById(
+            "error"
+        );
 
-async function runPrediction() {
-    const start = performance.now();
-    const btn = document.getElementById("predictBtn");
-    btn.disabled = true;
-    btn.textContent = "⏳ Đang xử lý...";
 
-    const payload = {
-        sepal_length: Number(sliders.sepal_length.value),
-        sepal_width: Number(sliders.sepal_width.value),
-        petal_length: Number(sliders.petal_length.value),
-        petal_width: Number(sliders.petal_width.value)
+    error.textContent = "";
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "⏳  Đang phân tích...";
+
+
+    const data = {
+
+        sepal_length:
+            Number(
+                sliders.sepal_length.value
+            ),
+
+        sepal_width:
+            Number(
+                sliders.sepal_width.value
+            ),
+
+        petal_length:
+            Number(
+                sliders.petal_length.value
+            ),
+
+        petal_width:
+            Number(
+                sliders.petal_width.value
+            )
+
     };
 
-    try {
-        const res = await fetch("/predict", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
 
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        const f = flowers[data.class_id];
+    try{
 
-        document.getElementById("resultName").textContent = f.name;
-        document.getElementById("resultDesc").textContent = f.desc;
-        document.getElementById("flowerImg").src = f.img;
+        const response =
+            await fetch(
+                "/predict",
+                {
 
-        let scores = [0, 0, 0];
-        scores[data.class_id] = 98.2;
-        let rem = 1.8;
-        for(let i=0; i<3; i++) {
-            if(i !== data.class_id) scores[i] = +(rem / 2).toFixed(1);
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(data)
+
+                }
+            );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+
         }
-        barChart.data.datasets[0].data = scores;
-        barChart.update();
 
-        const latency = Math.round(performance.now() - start);
-        document.getElementById("latencyTag").textContent = `⚡ Latency: ${latency}ms`;
 
-        const timeStr = new Date().toLocaleTimeString();
-        historyList.unshift({ name: f.name, sl: payload.sepal_length, sw: payload.sepal_width, pl: payload.petal_length, pw: payload.petal_width, time: timeStr });
-        if(historyList.length > 8) historyList.pop();
+        const result =
+            await response.json();
 
-        let rows = "";
-        historyList.forEach(item => {
-            rows += `<tr><td><b>${item.name}</b></td><td>${item.sl} / ${item.sw}</td><td>${item.pl} / ${item.pw}</td><td>${item.time}</td></tr>`;
-        });
-        document.getElementById("historyBody").innerHTML = rows;
 
-        showToast("✨ Phân tích mô hình hoàn tất!");
-    } catch(err) {
-        showToast("⚠️ Lỗi kết nối máy chủ AI!");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "✦ Phân tích AI ngay";
+        const classId =
+            Number(
+                result.class_id
+            );
+
+
+        const flower =
+            flowers[classId];
+
+
+        if(!flower){
+
+            throw new Error(
+                "Class không hợp lệ"
+            );
+
+        }
+
+
+        /* IMAGE */
+
+        const image =
+            document.getElementById(
+                "flowerImage"
+            );
+
+
+        image.classList.remove(
+            "animate"
+        );
+
+
+        void image.offsetWidth;
+
+
+        image.src =
+            flower.image;
+
+
+        image.alt =
+            flower.name;
+
+
+        image.classList.add(
+            "animate"
+        );
+
+
+        /* NAME */
+
+        const name =
+            document.getElementById(
+                "resultName"
+            );
+
+
+        name.classList.remove(
+            "fade-up"
+        );
+
+
+        void name.offsetWidth;
+
+
+        name.textContent =
+            flower.name;
+
+
+        name.classList.add(
+            "fade-up"
+        );
+
+
+        /* DESCRIPTION */
+
+        document.getElementById(
+            "resultDescription"
+        ).textContent =
+            flower.description;
+
+
+        /* STATUS */
+
+        document.getElementById(
+            "apiStatus"
+        ).textContent =
+            "Prediction completed · Class " +
+            classId;
+
+
     }
-}
 
-function resetParams() {
-    loadPreset('setosa');
-}
+    catch(err){
 
-function exportCSV() {
-    if(historyList.length === 0) {
-        showToast("⚠️ Chưa có dữ liệu lịch sử để xuất!");
-        return;
+        error.textContent =
+            "Không thể kết nối API: " +
+            err.message;
+
     }
-    let csv = "Loài,Sepal Length,Sepal Width,Petal Length,Petal Width,Thời gian\\n";
-    historyList.forEach(i => {
-        csv += `${i.name},${i.sl},${i.sw},${i.pl},${i.pw},${i.time}\\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'iris_ai_history.csv';
-    a.click();
-    showToast("📥 Đã xuất file CSV thành công!");
+
+    finally{
+
+        button.disabled =
+            false;
+
+        button.textContent =
+            "✦   Phân loại bằng SVM";
+
+    }
+
 }
 
-runPrediction();
+
+/* =====================================================
+   RESET
+===================================================== */
+
+document
+.getElementById("resetBtn")
+.addEventListener(
+    "click",
+    () => {
+
+        Object.entries(defaults)
+        .forEach(
+            ([key,value]) => {
+
+                sliders[key].value =
+                    value;
+
+                updateSlider(
+                    sliders[key]
+                );
+
+            }
+        );
+
+
+        predict();
+
+    }
+);
+
+
+/* =====================================================
+   PREDICT BUTTON
+===================================================== */
+
+document
+.getElementById("predictBtn")
+.addEventListener(
+    "click",
+    predict
+);
+
 </script>
+
 </body>
+
 </html>
 """
 
-# =========================
-# API ENDPOINTS
-# =========================
-@app.get("/health", tags=["System"])
-def health():
-    return {"status": "healthy", "model_loaded": model is not None}
 
-@app.post("/predict", tags=["Prediction"])
-def predict_endpoint(data: IrisInput):
-    if model is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
-    
-    features = np.array([[
+# =========================
+# HEALTH CHECK
+# =========================
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "model": "SVM"
+    }
+
+
+# =========================
+# PREDICT API
+# =========================
+@app.post("/predict")
+def predict(data: IrisInput):
+
+    features = [[
+
         data.sepal_length,
         data.sepal_width,
         data.petal_length,
         data.petal_width
-    ]])
-    prediction = int(model.predict(features)[0])
-    return {"class_id": prediction, "prediction": species[prediction]}
+
+    ]]
+
+    prediction = int(
+        model.predict(features)[0]
+    )
+
+    return {
+
+        "class_id": prediction,
+
+        "prediction":
+            species[prediction]
+
+    }
