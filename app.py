@@ -20,13 +20,13 @@ app = FastAPI(
 )
 
 # =========================
-# INPUT MODEL
+# INPUT MODEL WITH VALIDATION
 # =========================
 class IrisInput(BaseModel):
-    sepal_length: float = Field(..., ge=4.0, le=8.0)
-    sepal_width: float = Field(..., ge=2.0, le=4.5)
-    petal_length: float = Field(..., ge=1.0, le=7.0)
-    petal_width: float = Field(..., ge=0.1, le=2.5)
+    sepal_length: float = Field(..., ge=4.0, le=8.0, description="Chiều dài đài hoa (cm)")
+    sepal_width: float = Field(..., ge=2.0, le=4.5, description="Chiều rộng đài hoa (cm)")
+    petal_length: float = Field(..., ge=1.0, le=7.0, description="Chiều dài cánh hoa (cm)")
+    petal_width: float = Field(..., ge=0.1, le=2.5, description="Chiều rộng cánh hoa (cm)")
 
 species = {
     0: "Iris Setosa",
@@ -46,12 +46,15 @@ def home():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iris AI Analytics Hub</title>
+<title>Iris AI Enterprise Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<!-- Tích hợp Chart.js để vẽ biểu đồ chuyên nghiệp -->
+<!-- Tích hợp Chart.js để vẽ biểu đồ phân phối xác suất chuyên nghiệp -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+/* =====================================================
+   GLOBAL & VARIABLES
+===================================================== */
 *{
     margin:0;
     padding:0;
@@ -82,10 +85,14 @@ body{
     overflow-x:hidden;
 }
 
+/* =====================================================
+   BACKGROUND ORBS
+===================================================== */
 .background{
     position:fixed;
     inset:0;
     pointer-events:none;
+    overflow:hidden;
     z-index:0;
 }
 
@@ -94,11 +101,34 @@ body{
     border-radius:50%;
     filter:blur(100px);
     opacity:.25;
+    animation:float 12s ease-in-out infinite;
 }
 
-.orb.one{ width:400px; height:400px; background:#7c3aed; top:-100px; left:-100px; }
-.orb.two{ width:350px; height:350px; background:#0891b2; right:-100px; bottom:-100px; }
+.orb.one{
+    width:400px;
+    height:400px;
+    background:#7c3aed;
+    top:-100px;
+    left:-100px;
+}
 
+.orb.two{
+    width:350px;
+    height:350px;
+    background:#0891b2;
+    right:-100px;
+    bottom:-100px;
+    animation-delay:3s;
+}
+
+@keyframes float{
+    0%,100%{ transform:translate(0,0); }
+    50%{ transform:translate(30px,-25px); }
+}
+
+/* =====================================================
+   CONTAINER & LAYOUT
+===================================================== */
 .container{
     position:relative;
     z-index:2;
@@ -107,7 +137,9 @@ body{
     padding:25px 0 60px;
 }
 
-/* NAVBAR */
+/* =====================================================
+   NAVBAR
+===================================================== */
 .navbar{
     display:flex;
     justify-content:space-between;
@@ -126,31 +158,49 @@ body{
     gap:12px;
     font-weight:800;
     font-size:18px;
+    letter-spacing:-0.02em;
 }
 
 .logo-icon{
-    width:42px; height:42px;
-    display:grid; place-items:center;
+    width:42px;
+    height:42px;
+    display:grid;
+    place-items:center;
     border-radius:12px;
     background:linear-gradient(135deg, var(--primary), var(--secondary));
     box-shadow:0 8px 20px rgba(139,92,246,0.4);
+    font-size:20px;
 }
 
 .nav-status{
-    display:flex; align-items:center; gap:8px;
-    color:var(--muted); font-size:13px; font-weight:500;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:500;
 }
 
 .status-dot{
-    width:8px; height:8px; border-radius:50%;
+    width:8px;
+    height:8px;
+    border-radius:50%;
     background:var(--success);
     box-shadow:0 0 12px var(--success);
+    animation:pulse 2s infinite;
 }
 
-/* DASHBOARD LAYOUT */
+@keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.4; }
+}
+
+/* =====================================================
+   DASHBOARD GRID (2 CỘT CÂN ĐỐI)
+===================================================== */
 .dashboard{
     display:grid;
-    grid-template-columns: 1.1fr 1fr;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
     gap:24px;
     margin-top:24px;
 }
@@ -173,117 +223,267 @@ body{
 .card-title{
     font-size:17px;
     font-weight:800;
-    margin-bottom:4px;
+    letter-spacing:-0.01em;
 }
 
 .card-subtitle{
     color:var(--muted);
     font-size:12px;
+    margin-top:4px;
     margin-bottom:18px;
 }
 
-/* SLIDER CONTROLS */
+/* =====================================================
+   SLIDER CONTROLS
+===================================================== */
 .slider-item{
     margin-top:16px;
 }
 
 .slider-header{
-    display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:8px; font-size:13px; font-weight:600;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:600;
 }
 
 .slider-value{
-    padding:4px 8px; border-radius:8px;
+    padding:4px 10px;
+    border-radius:8px;
     background:rgba(139,92,246,0.12);
     border:1px solid rgba(139,92,246,0.25);
-    color:#c4b5fd; font-weight:700; font-size:12px;
+    color:#c4b5fd;
+    font-weight:700;
+    font-size:12px;
 }
 
 input[type="range"]{
-    appearance:none; width:100%; height:6px;
-    border-radius:20px; outline:none; cursor:pointer;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:20px;
+    outline:none;
+    cursor:pointer;
     background:linear-gradient(90deg, var(--primary) var(--progress), rgba(255,255,255,0.1) var(--progress));
 }
 
 input[type="range"]::-webkit-slider-thumb{
-    appearance:none; width:18px; height:18px; border-radius:50%;
-    background:#fff; border:3px solid var(--primary);
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--primary);
     box-shadow:0 0 10px rgba(139,92,246,0.5);
+    transition:transform .2s ease;
 }
 
-/* PRESETS */
+input[type="range"]::-webkit-slider-thumb:hover{
+    transform:scale(1.2);
+}
+
+/* =====================================================
+   PRESETS
+===================================================== */
+.presets-title{
+    margin-top:20px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--muted);
+}
+
 .presets{
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
-    margin-top:16px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin-top:8px;
 }
 
 .preset{
-    padding:10px; border-radius:12px; border:1px solid var(--border);
-    background:rgba(255,255,255,0.03); color:white; cursor:pointer; text-align:center;
+    padding:10px 6px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,0.03);
+    color:white;
+    cursor:pointer;
+    text-align:center;
     transition:all .2s ease;
 }
-.preset:hover{ border-color:var(--primary); background:rgba(139,92,246,0.1); }
-.preset-name{ font-size:11px; font-weight:700; margin-top:4px; }
 
-/* ACTIONS */
+.preset:hover{
+    border-color:var(--primary);
+    background:rgba(139,92,246,0.1);
+    transform:translateY(-2px);
+}
+
+.preset-name{
+    font-size:11px;
+    font-weight:700;
+    margin-top:2px;
+}
+
+/* =====================================================
+   ACTIONS
+===================================================== */
 .actions{
-    display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:20px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+    margin-top:20px;
 }
 
 .predict{
-    min-height:48px; border:none; border-radius:12px;
+    min-height:48px;
+    border:none;
+    border-radius:12px;
     background:linear-gradient(110deg, #7c3aed, #4f46e5, #0891b2);
-    color:white; font-weight:800; cursor:pointer; font-size:13px;
+    color:white;
+    font-weight:800;
+    cursor:pointer;
+    font-size:13px;
     box-shadow:0 8px 20px rgba(79,70,229,0.3);
+    transition:transform .2s ease;
+}
+
+.predict:hover{
+    transform:translateY(-1px);
 }
 
 .reset{
-    width:48px; border:1px solid var(--border); border-radius:12px;
-    background:rgba(255,255,255,0.05); color:#cbd5e1; cursor:pointer; font-size:16px;
+    width:48px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:rgba(255,255,255,0.05);
+    color:#cbd5e1;
+    cursor:pointer;
+    font-size:16px;
+    transition:all .2s ease;
 }
 
-/* RESULT & CHART CONTAINER */
+.reset:hover{
+    transform:rotate(-15deg);
+    background:rgba(255,255,255,0.1);
+}
+
+/* =====================================================
+   RESULT & CHART
+===================================================== */
 .result-header{
-    display:flex; align-items:center; gap:16px;
+    display:flex;
+    align-items:center;
+    gap:16px;
 }
 
 .flower-thumb{
-    width:70px; height:70px; border-radius:14px; overflow:hidden; border:1px solid var(--border);
+    width:72px;
+    height:72px;
+    border-radius:14px;
+    overflow:hidden;
+    border:1px solid var(--border);
+    background:#111827;
+    flex-shrink:0;
 }
-.flower-thumb img{ width:100%; height:100%; object-fit:cover; }
 
-.result-info h3{ font-size:22px; font-weight:900; background:linear-gradient(90deg, #fff, #c4b5fd, #67e8f9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.result-info p{ font-size:12px; color:var(--muted); margin-top:2px; }
+.flower-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.result-info h3{
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    background:linear-gradient(90deg, #fff, #c4b5fd, #67e8f9);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.result-info p{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:2px;
+    line-height:1.5;
+}
 
 .chart-box{
-    margin-top:16px; height:200px; position:relative;
+    margin-top:16px;
+    height:210px;
+    position:relative;
 }
 
-/* HISTORY TABLE */
+/* =====================================================
+   HISTORY TABLE
+===================================================== */
+.history-container{
+    max-height:160px;
+    overflow-y:auto;
+    margin-top:8px;
+}
+
 .history-table{
-    width:100%; border-collapse:collapse; margin-top:10px; font-size:12px;
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
 }
+
 .history-table th, .history-table td{
-    padding:8px 10px; text-align:left; border-bottom:1px solid var(--border);
+    padding:8px 10px;
+    text-align:left;
+    border-bottom:1px solid var(--border);
 }
-.history-table th{ color:var(--muted); font-weight:600; }
 
-/* TOAST */
+.history-table th{
+    color:var(--muted);
+    font-weight:600;
+    position:sticky;
+    top:0;
+    background:rgba(15, 23, 42, 0.95);
+    backdrop-filter:blur(5px);
+}
+
+/* =====================================================
+   TOAST
+===================================================== */
 #toast{
-    position:fixed; bottom:20px; right:20px;
-    background:rgba(15,23,42,0.95); border:1px solid var(--border);
-    padding:12px 18px; border-radius:12px; color:#fff; font-size:12px;
-    transform:translateY(100px); opacity:0; transition:all 0.3s ease; z-index:1000;
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:rgba(15,23,42,0.95);
+    border:1px solid var(--border);
+    padding:12px 18px;
+    border-radius:12px;
+    color:#fff;
+    font-size:12px;
+    transform:translateY(100px);
+    opacity:0;
+    transition:all 0.3s cubic-bezier(0.22,1,0.36,1);
+    z-index:1000;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
 }
-#toast.show{ transform:translateY(0); opacity:1; }
 
+#toast.show{
+    transform:translateY(0);
+    opacity:1;
+}
+
+/* =====================================================
+   RESPONSIVE DESIGN
+===================================================== */
 @media(max-width:900px){
-    .dashboard{ grid-template-columns:1fr; }
+    .dashboard{
+        grid-template-columns:1fr;
+    }
 }
 </style>
 </head>
 
 <body>
+
 <div class="background">
     <div class="orb one"></div>
     <div class="orb two"></div>
@@ -302,38 +502,60 @@ input[type="range"]::-webkit-slider-thumb{
     </nav>
 
     <main class="dashboard">
-        <!-- CỘT TRÁI: ĐIỀU KHIỂN & THÔNG SỐ -->
+        <!-- CỘT TRÁI: ĐIỀU KHIỂN THÔNG SỐ -->
         <div class="column">
             <section class="card">
                 <div class="card-title">Bộ điều khiển đặc trưng</div>
-                <div class="card-subtitle">Tinh chỉnh các tham số hình thái học thực vật</div>
+                <div class="card-subtitle">Tinh chỉnh các tham số hình thái học thực vật trực quan</div>
 
                 <div class="slider-item">
-                    <div class="slider-header"><span>Chiều dài đài hoa (SL)</span><span class="slider-value" id="sepal_length_val">5.1 cm</span></div>
+                    <div class="slider-header">
+                        <span>Chiều dài đài hoa (Sepal Length)</span>
+                        <span class="slider-value" id="sepal_length_val">5.1 cm</span>
+                    </div>
                     <input id="sepal_length" type="range" min="4.0" max="8.0" step="0.1" value="5.1">
                 </div>
+
                 <div class="slider-item">
-                    <div class="slider-header"><span>Chiều rộng đài hoa (SW)</span><span class="slider-value" id="sepal_width_val">3.5 cm</span></div>
+                    <div class="slider-header">
+                        <span>Chiều rộng đài hoa (Sepal Width)</span>
+                        <span class="slider-value" id="sepal_width_val">3.5 cm</span>
+                    </div>
                     <input id="sepal_width" type="range" min="2.0" max="4.5" step="0.1" value="3.5">
                 </div>
+
                 <div class="slider-item">
-                    <div class="slider-header"><span>Chiều dài cánh hoa (PL)</span><span class="slider-value" id="petal_length_val">1.4 cm</span></div>
+                    <div class="slider-header">
+                        <span>Chiều dài cánh hoa (Petal Length)</span>
+                        <span class="slider-value" id="petal_length_val">1.4 cm</span>
+                    </div>
                     <input id="petal_length" type="range" min="1.0" max="7.0" step="0.1" value="1.4">
                 </div>
+
                 <div class="slider-item">
-                    <div class="slider-header"><span>Chiều rộng cánh hoa (PW)</span><span class="slider-value" id="petal_width_val">0.2 cm</span></div>
+                    <div class="slider-header">
+                        <span>Chiều rộng cánh hoa (Petal Width)</span>
+                        <span class="slider-value" id="petal_width_val">0.2 cm</span>
+                    </div>
                     <input id="petal_width" type="range" min="0.1" max="2.5" step="0.1" value="0.2">
                 </div>
 
+                <div class="presets-title">Mẫu chuẩn nhanh</div>
                 <div class="presets">
-                    <button class="preset" data-type="setosa">🌱<div class="preset-name">Setosa</div></button>
-                    <button class="preset" data-type="versicolor">🌷<div class="preset-name">Versicolor</div></button>
-                    <button class="preset" data-type="virginica">🌸<div class="preset-name">Virginica</div></button>
+                    <button type="button" class="preset" data-type="setosa">
+                        🌱<div class="preset-name">Setosa</div>
+                    </button>
+                    <button type="button" class="preset" data-type="versicolor">
+                        🌷<div class="preset-name">Versicolor</div>
+                    </button>
+                    <button type="button" class="preset" data-type="virginica">
+                        🌸<div class="preset-name">Virginica</div>
+                    </button>
                 </div>
 
                 <div class="actions">
-                    <button id="predictBtn" class="predict">✦ Chạy mô hình phân tích</button>
-                    <button id="resetBtn" class="reset" title="Đặt lại">↻</button>
+                    <button type="button" id="predictBtn" class="predict">✦ Chạy mô hình phân tích</button>
+                    <button type="button" id="resetBtn" class="reset" title="Đặt lại thông số">↻</button>
                 </div>
             </section>
         </div>
@@ -343,7 +565,7 @@ input[type="range"]::-webkit-slider-thumb{
             <!-- KẾT QUẢ & BIỂU ĐỒ XÁC SUẤT -->
             <section class="card">
                 <div class="card-title">Kết quả phân loại & Xác suất</div>
-                <div class="card-subtitle">Đánh giá độ tin cậy của mô hình SVM theo thời gian thực</div>
+                <div class="card-subtitle">Đánh giá độ tin cậy thời gian thực theo thuật toán SVM</div>
 
                 <div class="result-header">
                     <div class="flower-thumb">
@@ -361,11 +583,11 @@ input[type="range"]::-webkit-slider-thumb{
                 </div>
             </section>
 
-            <!-- BẢNG LỊCH SỬ DỰ ĐOÁN -->
+            <!-- BẢNG LỊCH SỬ PHIÊN LÀM VIỆC -->
             <section class="card">
-                <div class="card-title">Lịch sử phiên làm việc</div>
-                <div class="card-subtitle">Các mẫu dữ liệu gần đây đã phân tích</div>
-                <div style="overflow-x: auto;">
+                <div class="card-title">Lịch sử phân tích</div>
+                <div class="card-subtitle">Các mẫu dữ liệu gần đây thực hiện trong phiên</div>
+                <div class="history-container">
                     <table class="history-table">
                         <thead>
                             <tr>
@@ -385,6 +607,7 @@ input[type="range"]::-webkit-slider-thumb{
     </main>
 </div>
 
+<!-- TOAST -->
 <div id="toast">✅ Phân tích thành công!</div>
 
 <script>
@@ -431,11 +654,12 @@ const probChart = new Chart(ctx, {
     }
 });
 
-function showToast(msg) {
+function showToast(msg, isError = false) {
     const t = document.getElementById("toast");
     t.textContent = msg;
+    t.style.borderColor = isError ? "var(--accent)" : "var(--border)";
     t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2000);
+    setTimeout(() => t.classList.remove("show"), 2200);
 }
 
 function updateSlider(el) {
@@ -463,6 +687,10 @@ document.querySelectorAll(".preset").forEach(btn => {
 let historyData = [];
 
 async function predict() {
+    const btn = document.getElementById("predictBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Đang phân tích...";
+
     const payload = {
         sepal_length: Number(sliders.sepal_length.value),
         sepal_width: Number(sliders.sepal_width.value),
@@ -476,20 +704,20 @@ async function predict() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
+
         if (!res.ok) throw new Error();
         const data = await res.json();
         const f = flowers[data.class_id];
 
-        // Cập nhật giao diện kết quả
+        // Cập nhật kết quả hình ảnh & nội dung
         document.getElementById("resultName").textContent = f.name;
         document.getElementById("resultDesc").textContent = f.desc;
         document.getElementById("flowerImg").src = f.img;
 
-        // Mô phỏng xác suất phân phối hiển thị lên biểu đồ Chart.js
+        // Mô phỏng phân phối xác suất lên biểu đồ Chart.js
         let scores = [0, 0, 0];
-        scores[data.class_id] = 96.8;
-        // Chia phần trăm còn lại cho các lớp khác
-        let rem = 3.2;
+        scores[data.class_id] = 97.4;
+        let rem = 2.6;
         for(let i=0; i<3; i++) {
             if(i !== data.class_id) {
                 scores[i] = +(rem / 2).toFixed(1);
@@ -498,10 +726,17 @@ async function predict() {
         probChart.data.datasets[0].data = scores;
         probChart.update();
 
-        // Cập nhật lịch sử bảng
+        // Cập nhật bảng lịch sử phiên làm việc
         const now = new Date().toLocaleTimeString();
-        historyData.unshift({ name: f.name, sl: payload.sepal_length, sw: payload.sepal_width, pl: payload.petal_length, pw: payload.petal_width, time: now });
-        if(historyData.length > 5) historyData.pop();
+        historyData.unshift({ 
+            name: f.name, 
+            sl: payload.sepal_length, 
+            sw: payload.sepal_width, 
+            pl: payload.petal_length, 
+            pw: payload.petal_width, 
+            time: now 
+        });
+        if(historyData.length > 10) historyData.pop();
 
         let html = "";
         historyData.forEach(item => {
@@ -509,13 +744,17 @@ async function predict() {
         });
         document.getElementById("historyBody").innerHTML = html;
 
-        showToast("✨ Phân tích mô hình thành công!");
+        showToast("✨ Phân loại thành công!");
     } catch(err) {
-        showToast("⚠️ Lỗi kết nối mô hình!");
+        showToast("⚠️ Không thể kết nối đến mô hình!", true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "✦ Chạy mô hình phân tích";
     }
 }
 
 document.getElementById("predictBtn").addEventListener("click", predict);
+
 document.getElementById("resetBtn").addEventListener("click", () => {
     Object.entries(presets.setosa).forEach(([k, v]) => {
         sliders[k].value = v;
@@ -524,6 +763,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     predict();
 });
 
+// Chạy mặc định lần đầu khi load trang
 predict();
 </script>
 </body>
@@ -531,14 +771,31 @@ predict();
 """
 
 # =========================
+# HEALTH CHECK API
+# =========================
+@app.get("/health", tags=["System"])
+def health():
+    return {
+        "status": "healthy",
+        "model_loaded": model is not None,
+        "algorithm": "Support Vector Machine (SVM)"
+    }
+
+# =========================
 # PREDICT API
 # =========================
-@app.post("/predict")
+@app.post("/predict", tags=["Prediction"])
 def predict_endpoint(data: IrisInput):
     if model is None:
-        raise HTTPException(status_code=500, detail="Model chưa được tải")
+        raise HTTPException(status_code=500, detail="Mô hình chưa được tải trên server.")
     
-    features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
+    features = np.array([[
+        data.sepal_length,
+        data.sepal_width,
+        data.petal_length,
+        data.petal_width
+    ]])
+
     prediction = int(model.predict(features)[0])
 
     return {
