@@ -16,7 +16,7 @@ except Exception as e:
 app = FastAPI(
     title="Iris AI Quantum Studio",
     description="Nền tảng phân tích AI cao cấp tích hợp đa biểu đồ, tùy biến Theme và xuất dữ liệu thời gian thực.",
-    version="4.0.0"
+    version="4.1.0"
 )
 
 class IrisInput(BaseModel):
@@ -45,7 +45,6 @@ def home():
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iris AI Quantum Studio Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Tích hợp Chart.js cho Bar Chart và Radar Chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -106,7 +105,6 @@ body{
     transition: background 0.4s ease;
 }
 
-/* BACKGROUND AMBIENT GLOWS */
 .ambient-glow{
     position:fixed;
     inset:0;
@@ -123,8 +121,8 @@ body{
     opacity:0.2;
     animation:drift 15s infinite alternate ease-in-out;
 }
-.glow-orb.1{ background:var(--primary); top:-150px; left:-150px; }
-.glow-orb.2{ background:var(--secondary); bottom:-150px; right:-150px; animation-delay: 5s; }
+.glow-orb.one{ background:var(--primary); top:-150px; left:-150px; }
+.glow-orb.two{ background:var(--secondary); bottom:-150px; right:-150px; animation-delay: 5s; }
 
 @keyframes drift {
     0% { transform: translate(0, 0) scale(1); }
@@ -139,7 +137,6 @@ body{
     padding:24px 0 60px;
 }
 
-/* NAVBAR */
 .navbar{
     display:flex;
     justify-content:space-between;
@@ -158,7 +155,6 @@ body{
     gap:12px;
     font-weight:800;
     font-size:18px;
-    letter-spacing:-0.02em;
 }
 
 .logo-badge{
@@ -229,7 +225,6 @@ body{
 
 @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.3;} }
 
-/* DASHBOARD LAYOUT */
 .dashboard{
     display:grid;
     grid-template-columns: 1fr 1.15fr;
@@ -260,7 +255,6 @@ body{
 .card-title{
     font-size:16px;
     font-weight:800;
-    letter-spacing:-0.01em;
 }
 
 .card-desc{
@@ -270,7 +264,6 @@ body{
     margin-bottom:18px;
 }
 
-/* SLIDERS */
 .slider-group{
     margin-top:16px;
 }
@@ -319,7 +312,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     transform:scale(1.25);
 }
 
-/* PRESETS */
 .presets-heading{
     font-size:10px;
     font-weight:800;
@@ -362,7 +354,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     margin-top:2px;
 }
 
-/* ACTIONS */
 .action-row{
     display:grid;
     grid-template-columns: 1fr auto auto;
@@ -402,7 +393,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     border-color:var(--primary);
 }
 
-/* RESULT DISPLAY */
 .result-box{
     display:flex;
     align-items:center;
@@ -413,18 +403,16 @@ input[type="range"]::-webkit-slider-thumb:hover{
     background:rgba(0,0,0,0.2);
 }
 
-.flower-img-wrap{
+.flower-icon-box{
     width:68px;
     height:68px;
     border-radius:12px;
-    overflow:hidden;
+    display:grid;
+    place-items:center;
+    font-size:32px;
     border:1px solid var(--border);
+    background:rgba(255,255,255,0.03);
     flex-shrink:0;
-}
-.flower-img-wrap img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
 }
 
 .result-meta h3{
@@ -454,7 +442,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     border:1px solid var(--border);
 }
 
-/* CHARTS GRID */
 .charts-grid{
     display:grid;
     grid-template-columns: 1.1fr 1fr;
@@ -467,7 +454,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     position:relative;
 }
 
-/* HISTORY TABLE */
 .history-scroll{
     max-height:150px;
     overflow-y:auto;
@@ -491,7 +477,6 @@ input[type="range"]::-webkit-slider-thumb:hover{
     background:var(--bg);
 }
 
-/* TOAST */
 #toast{
     position:fixed;
     bottom:24px;
@@ -524,21 +509,21 @@ input[type="range"]::-webkit-slider-thumb:hover{
 <body>
 
 <div class="ambient-glow">
-    <div class="glow-orb 1"></div>
-    <div class="glow-orb 2"></div>
+    <div class="glow-orb one"></div>
+    <div class="glow-orb two"></div>
 </div>
 
 <div class="container">
     <nav class="navbar">
         <div class="logo">
             <div class="logo-badge">⚡</div>
-            <span>Iris AI Quantum Studio <small style="color:var(--primary); font-weight:500;">v4.0</small></span>
+            <span>Iris AI Quantum Studio <small style="color:var(--primary); font-weight:500;">v4.1</small></span>
         </div>
         <div class="nav-right">
             <div class="theme-switcher">
-                <button class="theme-btn active" onclick="setTheme('quantum')">Quantum</button>
-                <button class="theme-btn" onclick="setTheme('cyberpunk')">Cyberpunk</button>
-                <button class="theme-btn" onclick="setTheme('matrix')">Matrix</button>
+                <button class="theme-btn active" onclick="setTheme('quantum', event)">Quantum</button>
+                <button class="theme-btn" onclick="setTheme('cyberpunk', event)">Cyberpunk</button>
+                <button class="theme-btn" onclick="setTheme('matrix', event)">Matrix</button>
             </div>
             <div class="status-badge">
                 <span class="status-dot"></span>
@@ -557,7 +542,7 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="slider-group">
                     <div class="slider-top">
                         <span>Chiều dài đài hoa (Sepal Length)</span>
-                        <span class="slider-val" id="sl_val">5.1 cm</span>
+                        <span class="slider-val" id="sepal_length_val">5.1 cm</span>
                     </div>
                     <input id="sepal_length" type="range" min="4.0" max="8.0" step="0.1" value="5.1">
                 </div>
@@ -565,7 +550,7 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="slider-group">
                     <div class="slider-top">
                         <span>Chiều rộng đài hoa (Sepal Width)</span>
-                        <span class="slider-val" id="sw_val">3.5 cm</span>
+                        <span class="slider-val" id="sepal_width_val">3.5 cm</span>
                     </div>
                     <input id="sepal_width" type="range" min="2.0" max="4.5" step="0.1" value="3.5">
                 </div>
@@ -573,7 +558,7 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="slider-group">
                     <div class="slider-top">
                         <span>Chiều dài cánh hoa (Petal Length)</span>
-                        <span class="slider-val" id="pl_val">1.4 cm</span>
+                        <span class="slider-val" id="petal_length_val">1.4 cm</span>
                     </div>
                     <input id="petal_length" type="range" min="1.0" max="7.0" step="0.1" value="1.4">
                 </div>
@@ -581,22 +566,22 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="slider-group">
                     <div class="slider-top">
                         <span>Chiều rộng cánh hoa (Petal Width)</span>
-                        <span class="slider-val" id="pw_val">0.2 cm</span>
+                        <span class="slider-val" id="petal_width_val">0.2 cm</span>
                     </div>
                     <input id="petal_width" type="range" min="0.1" max="2.5" step="0.1" value="0.2">
                 </div>
 
                 <div class="presets-heading">Mẫu chuẩn sinh học</div>
                 <div class="presets-grid">
-                    <button class="preset-chip" onclick="loadPreset('setosa')">🌱<span>Setosa</span></button>
-                    <button class="preset-chip" onclick="loadPreset('versicolor')">🌷<span>Versicolor</span></button>
-                    <button class="preset-chip" onclick="loadPreset('virginica')">🌸<span>Virginica</span></button>
+                    <button type="button" class="preset-chip" onclick="loadPreset('setosa')">🌱<span>Setosa</span></button>
+                    <button type="button" class="preset-chip" onclick="loadPreset('versicolor')">🌷<span>Versicolor</span></button>
+                    <button type="button" class="preset-chip" onclick="loadPreset('virginica')">🌸<span>Virginica</span></button>
                 </div>
 
                 <div class="action-row">
-                    <button class="btn-predict" id="predictBtn" onclick="runPrediction()">✦ Phân tích AI ngay</button>
-                    <button class="btn-icon" onclick="resetParams()" title="Đặt lại">↻</button>
-                    <button class="btn-icon" onclick="exportCSV()" title="Xuất CSV">📥</button>
+                    <button type="button" class="btn-predict" id="predictBtn" onclick="runPrediction()">✦ Phân tích AI ngay</button>
+                    <button type="button" class="btn-icon" onclick="resetParams()" title="Đặt lại">↻</button>
+                    <button type="button" class="btn-icon" onclick="exportCSV()" title="Xuất CSV">📥</button>
                 </div>
             </section>
         </div>
@@ -608,9 +593,7 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="card-desc">Độ tin cậy từ thuật toán Support Vector Machine</div>
 
                 <div class="result-box">
-                    <div class="flower-img-wrap">
-                        <img id="flowerImg" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg" alt="Iris">
-                    </div>
+                    <div class="flower-icon-box" id="flowerIcon">🌱</div>
                     <div class="result-meta">
                         <h3 id="resultName">Iris Setosa</h3>
                         <p id="resultDesc">Đặc trưng cánh hoa nhỏ, ngắn, thích hợp điều kiện ôn đới.</p>
@@ -654,10 +637,10 @@ input[type="range"]::-webkit-slider-thumb:hover{
 <div id="toast">✅ Đã cập nhật mô hình thành công!</div>
 
 <script>
-function setTheme(name) {
+function setTheme(name, evt) {
     document.documentElement.setAttribute('data-theme', name);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if(evt && evt.target) evt.target.classList.add('active');
     showToast(`Đã chuyển sang giao diện ${name.toUpperCase()}`);
 }
 
@@ -675,12 +658,11 @@ const presets = {
 };
 
 const flowers = {
-    0: { name: "Iris Setosa", desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", img: "https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg" },
-    1: { name: "Iris Versicolor", desc: "Kích thước trung gian, màu sắc chuyển biến tinh tế.", img: "https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" },
-    2: { name: "Iris Virginica", desc: "Kích thước lớn nhất, cánh hoa rộng và dài.", img: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" }
+    0: { name: "Iris Setosa", desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", icon: "🌱" },
+    1: { name: "Iris Versicolor", desc: "Kích thước trung gian, màu sắc chuyển biến tinh tế.", icon: "🌷" },
+    2: { name: "Iris Virginica", desc: "Kích thước lớn nhất, cánh hoa rộng và dài.", icon: "🌸" }
 };
 
-// Cấu hình Biểu đồ Bar Chart
 const barCtx = document.getElementById('barChart').getContext('2d');
 const barChart = new Chart(barCtx, {
     type: 'bar',
@@ -703,7 +685,6 @@ const barChart = new Chart(barCtx, {
     }
 });
 
-// Cấu hình Biểu đồ Radar Chart
 const radarCtx = document.getElementById('radarChart').getContext('2d');
 const radarChart = new Chart(radarCtx, {
     type: 'radar',
@@ -743,14 +724,13 @@ function showToast(msg) {
 function updateSliderUI(el) {
     const min = Number(el.min), max = Number(el.max), val = Number(el.value);
     el.style.setProperty("--progress", ((val - min) / (max - min)) * 100 + "%");
-    document.getElementById(el.id.replace('sepal_', 's_').replace('petal_', 'p_') + "_val").textContent = val.toFixed(1) + " cm";
+    document.getElementById(el.id + "_val").textContent = val.toFixed(1) + " cm";
 }
 
 Object.values(sliders).forEach(s => {
     updateSliderUI(s);
     s.addEventListener("input", () => {
         updateSliderUI(s);
-        // Cập nhật realtime Radar Chart khi kéo slider
         radarChart.data.datasets[0].data = [
             Number(sliders.sepal_length.value),
             Number(sliders.sepal_width.value),
@@ -800,7 +780,7 @@ async function runPrediction() {
 
         document.getElementById("resultName").textContent = f.name;
         document.getElementById("resultDesc").textContent = f.desc;
-        document.getElementById("flowerImg").src = f.img;
+        document.getElementById("flowerIcon").textContent = f.icon;
 
         let scores = [0, 0, 0];
         scores[data.class_id] = 98.2;
@@ -812,16 +792,15 @@ async function runPrediction() {
         barChart.update();
 
         const latency = Math.round(performance.now() - start);
-        document.getElementById("latencyTag.innerHTML").textContent = `⚡ Latency: ${latency}ms`;
+        document.getElementById("latencyTag").textContent = `⚡ Latency: ${latency}ms`;
 
-        // Cập nhật lịch sử
         const timeStr = new Date().toLocaleTimeString();
         historyList.unshift({ name: f.name, sl: payload.sepal_length, sw: payload.sepal_width, pl: payload.petal_length, pw: payload.petal_width, time: timeStr });
         if(historyList.length > 8) historyList.pop();
 
         let rows = "";
         historyList.forEach(item => {
-            rows += `<tr><td><b>${item.name}</b></td><td>${item.sl}/${item.sw}</td><td>${item.pl}/${item.pw}</td><td>${item.time}</td></tr>`;
+            rows += `<tr><td><b>${item.name}</b></td><td>${item.sl} / ${item.sw}</td><td>${item.pl} / ${item.pw}</td><td>${item.time}</td></tr>`;
         });
         document.getElementById("historyBody").innerHTML = rows;
 
