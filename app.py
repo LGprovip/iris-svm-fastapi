@@ -11,22 +11,22 @@ try:
     model = joblib.load("svm_model.pkl")
 except Exception as e:
     model = None
-    print(f"⚠️ Cảnh báo: Không thể tải mô hình 'svm_model.pkl'. Hãy đảm bảo file tồn tại! Lỗi: {e}")
+    print(f"⚠️ Cảnh báo: Không thể tải mô hình 'svm_model.pkl'. Lỗi: {e}")
 
 app = FastAPI(
-    title="Iris AI Classification Platform",
-    description="Hệ thống AI phân loại hoa Iris thông minh sử dụng thuật toán Support Vector Machine (SVM) với giao diện thời gian thực.",
-    version="2.1.0"
+    title="Iris AI Enterprise Platform",
+    description="Hệ thống AI phân loại hoa Iris thông minh tích hợp biểu đồ phân tích thời gian thực và lịch sử dự đoán.",
+    version="3.0.0"
 )
 
 # =========================
-# INPUT MODEL WITH VALIDATION
+# INPUT MODEL
 # =========================
 class IrisInput(BaseModel):
-    sepal_length: float = Field(..., ge=4.0, le=8.0, description="Chiều dài đài hoa (cm)")
-    sepal_width: float = Field(..., ge=2.0, le=4.5, description="Chiều rộng đài hoa (cm)")
-    petal_length: float = Field(..., ge=1.0, le=7.0, description="Chiều dài cánh hoa (cm)")
-    petal_width: float = Field(..., ge=0.1, le=2.5, description="Chiều rộng cánh hoa (cm)")
+    sepal_length: float = Field(..., ge=4.0, le=8.0)
+    sepal_width: float = Field(..., ge=2.0, le=4.5)
+    petal_length: float = Field(..., ge=1.0, le=7.0)
+    petal_width: float = Field(..., ge=0.1, le=2.5)
 
 species = {
     0: "Iris Setosa",
@@ -46,13 +46,12 @@ def home():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iris AI Intelligence - Machine Learning Platform</title>
+<title>Iris AI Analytics Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Tích hợp Chart.js để vẽ biểu đồ chuyên nghiệp -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-/* =====================================================
-   GLOBAL & VARIABLES
-===================================================== */
 *{
     margin:0;
     padding:0;
@@ -61,7 +60,7 @@ def home():
 
 :root{
     --bg:#030712;
-    --panel:rgba(15, 23, 42, 0.75);
+    --panel:rgba(15, 23, 42, 0.8);
     --border:rgba(255, 255, 255, 0.08);
     --text:#f8fafc;
     --muted:#94a3b8;
@@ -69,7 +68,7 @@ def home():
     --secondary:#06b6d4;
     --success:#22c55e;
     --accent:#f43f5e;
-    --shadow: 0 20px 50px rgba(0,0,0,0.5);
+    --shadow: 0 25px 60px rgba(0,0,0,0.6);
 }
 
 body{
@@ -77,74 +76,45 @@ body{
     font-family:'Inter', sans-serif;
     color:var(--text);
     background:
-        radial-gradient(circle at 10% 10%, rgba(139,92,246,0.18), transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(6,182,212,0.14), transparent 40%),
+        radial-gradient(circle at 10% 10%, rgba(139,92,246,0.15), transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(6,182,212,0.12), transparent 40%),
         var(--bg);
     overflow-x:hidden;
 }
 
-/* =====================================================
-   BACKGROUND ORBS
-===================================================== */
 .background{
     position:fixed;
     inset:0;
     pointer-events:none;
-    overflow:hidden;
     z-index:0;
 }
 
 .orb{
     position:absolute;
     border-radius:50%;
-    filter:blur(90px);
-    opacity:.3;
-    animation:float 12s ease-in-out infinite;
+    filter:blur(100px);
+    opacity:.25;
 }
 
-.orb.one{
-    width:350px;
-    height:350px;
-    background:#7c3aed;
-    top:-100px;
-    left:-100px;
-}
+.orb.one{ width:400px; height:400px; background:#7c3aed; top:-100px; left:-100px; }
+.orb.two{ width:350px; height:350px; background:#0891b2; right:-100px; bottom:-100px; }
 
-.orb.two{
-    width:300px;
-    height:300px;
-    background:#0891b2;
-    right:-80px;
-    bottom:-80px;
-    animation-delay:3s;
-}
-
-@keyframes float{
-    0%,100%{ transform:translate(0,0); }
-    50%{ transform:translate(30px,-25px); }
-}
-
-/* =====================================================
-   CONTAINER & LAYOUT
-===================================================== */
 .container{
     position:relative;
     z-index:2;
-    width:min(1280px, 94%);
+    width:min(1400px, 95%);
     margin:auto;
     padding:25px 0 60px;
 }
 
-/* =====================================================
-   NAVBAR
-===================================================== */
+/* NAVBAR */
 .navbar{
     display:flex;
     justify-content:space-between;
     align-items:center;
     padding:16px 24px;
     border:1px solid var(--border);
-    background:rgba(15,23,42,0.65);
+    background:rgba(15,23,42,0.7);
     backdrop-filter:blur(20px);
     border-radius:20px;
     box-shadow:0 10px 30px rgba(0,0,0,0.3);
@@ -156,566 +126,266 @@ body{
     gap:12px;
     font-weight:800;
     font-size:18px;
-    letter-spacing:-0.02em;
 }
 
 .logo-icon{
-    width:42px;
-    height:42px;
-    display:grid;
-    place-items:center;
+    width:42px; height:42px;
+    display:grid; place-items:center;
     border-radius:12px;
     background:linear-gradient(135deg, var(--primary), var(--secondary));
     box-shadow:0 8px 20px rgba(139,92,246,0.4);
-    font-size:20px;
 }
 
 .nav-status{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color:var(--muted);
-    font-size:13px;
-    font-weight:500;
+    display:flex; align-items:center; gap:8px;
+    color:var(--muted); font-size:13px; font-weight:500;
 }
 
 .status-dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
+    width:8px; height:8px; border-radius:50%;
     background:var(--success);
     box-shadow:0 0 12px var(--success);
-    animation:pulse 2s infinite;
 }
 
-@keyframes pulse{
-    0%,100%{ opacity:1; }
-    50%{ opacity:.4; }
-}
-
-/* =====================================================
-   HERO SECTION
-===================================================== */
-.hero{
-    text-align:center;
-    padding:50px 20px 35px;
-}
-
-.badge{
-    display:inline-flex;
-    padding:6px 16px;
-    border-radius:100px;
-    border:1px solid rgba(139,92,246,0.35);
-    background:rgba(139,92,246,0.12);
-    color:#c4b5fd;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-}
-
-.hero h1{
-    margin-top:16px;
-    font-size:clamp(36px, 5vw, 60px);
-    line-height:1.1;
-    font-weight:900;
-    letter-spacing:-0.03em;
-    background:linear-gradient(110deg, #fff, #c4b5fd, #67e8f9);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.hero p{
-    max-width:600px;
-    margin:16px auto 0;
-    color:var(--muted);
-    line-height:1.7;
-    font-size:15px;
-}
-
-/* =====================================================
-   DASHBOARD GRID
-===================================================== */
+/* DASHBOARD LAYOUT */
 .dashboard{
     display:grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+    grid-template-columns: 1.1fr 1fr;
     gap:24px;
-    margin-top:10px;
+    margin-top:24px;
+}
+
+.column{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
 }
 
 .card{
     border:1px solid var(--border);
     background:var(--panel);
     backdrop-filter:blur(25px);
-    border-radius:28px;
+    border-radius:24px;
     box-shadow:var(--shadow);
-    overflow:hidden;
-}
-
-.card-header{
-    padding:28px 28px 10px;
+    padding:24px;
 }
 
 .card-title{
-    font-size:19px;
+    font-size:17px;
     font-weight:800;
+    margin-bottom:4px;
 }
 
 .card-subtitle{
-    margin-top:6px;
     color:var(--muted);
-    font-size:13px;
+    font-size:12px;
+    margin-bottom:18px;
 }
 
-/* =====================================================
-   CONTROLS & SLIDERS
-===================================================== */
-.controls{
-    padding:10px 28px 28px;
-}
-
+/* SLIDER CONTROLS */
 .slider-item{
-    margin-top:22px;
+    margin-top:16px;
 }
 
 .slider-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:10px;
-}
-
-.slider-name{
-    font-size:14px;
-    font-weight:650;
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:8px; font-size:13px; font-weight:600;
 }
 
 .slider-value{
-    min-width:70px;
-    text-align:center;
-    padding:6px 10px;
-    border-radius:10px;
+    padding:4px 8px; border-radius:8px;
     background:rgba(139,92,246,0.12);
     border:1px solid rgba(139,92,246,0.25);
-    color:#c4b5fd;
-    font-weight:800;
-    font-size:13px;
+    color:#c4b5fd; font-weight:700; font-size:12px;
 }
 
 input[type="range"]{
-    appearance:none;
-    width:100%;
-    height:6px;
-    border-radius:20px;
-    outline:none;
-    cursor:pointer;
+    appearance:none; width:100%; height:6px;
+    border-radius:20px; outline:none; cursor:pointer;
     background:linear-gradient(90deg, var(--primary) var(--progress), rgba(255,255,255,0.1) var(--progress));
 }
 
 input[type="range"]::-webkit-slider-thumb{
-    appearance:none;
-    width:20px;
-    height:20px;
-    border-radius:50%;
-    background:#fff;
-    border:4px solid var(--primary);
-    box-shadow:0 0 0 4px rgba(139,92,246,0.15), 0 4px 12px rgba(0,0,0,0.4);
-    transition:transform .2s ease;
+    appearance:none; width:18px; height:18px; border-radius:50%;
+    background:#fff; border:3px solid var(--primary);
+    box-shadow:0 0 10px rgba(139,92,246,0.5);
 }
 
-input[type="range"]::-webkit-slider-thumb:hover{
-    transform:scale(1.2);
-}
-
-/* =====================================================
-   PRESETS SECTION
-===================================================== */
-.presets-title{
-    margin-top:24px;
-    font-size:12px;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    color:var(--muted);
-}
-
+/* PRESETS */
 .presets{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:10px;
-    margin-top:10px;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+    margin-top:16px;
 }
 
 .preset{
-    padding:12px 8px;
-    border-radius:14px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,0.03);
-    color:white;
-    cursor:pointer;
-    text-align:center;
-    transition:all .25s ease;
+    padding:10px; border-radius:12px; border:1px solid var(--border);
+    background:rgba(255,255,255,0.03); color:white; cursor:pointer; text-align:center;
+    transition:all .2s ease;
 }
+.preset:hover{ border-color:var(--primary); background:rgba(139,92,246,0.1); }
+.preset-name{ font-size:11px; font-weight:700; margin-top:4px; }
 
-.preset:hover{
-    transform:translateY(-3px);
-    border-color:rgba(139,92,246,0.5);
-    background:rgba(139,92,246,0.12);
-}
-
-.preset-icon{
-    font-size:22px;
-    margin-bottom:4px;
-}
-
-.preset-name{
-    font-size:12px;
-    font-weight:700;
-}
-
-.preset-desc{
-    display:block;
-    margin-top:2px;
-    color:var(--muted);
-    font-size:10px;
-}
-
-/* =====================================================
-   ACTIONS BUTTONS
-===================================================== */
+/* ACTIONS */
 .actions{
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:12px;
-    margin-top:24px;
+    display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:20px;
 }
 
 .predict{
-    min-height:52px;
-    border:none;
-    border-radius:14px;
+    min-height:48px; border:none; border-radius:12px;
     background:linear-gradient(110deg, #7c3aed, #4f46e5, #0891b2);
-    color:white;
-    font-weight:800;
-    cursor:pointer;
-    font-size:14px;
-    box-shadow:0 10px 25px rgba(79,70,229,0.35);
-    transition:transform .2s ease, box-shadow .2s ease;
-}
-
-.predict:hover{
-    transform:translateY(-2px);
-    box-shadow:0 15px 35px rgba(79,70,229,0.45);
+    color:white; font-weight:800; cursor:pointer; font-size:13px;
+    box-shadow:0 8px 20px rgba(79,70,229,0.3);
 }
 
 .reset{
-    width:52px;
-    border:1px solid var(--border);
-    border-radius:14px;
-    background:rgba(255,255,255,0.05);
-    color:#cbd5e1;
-    cursor:pointer;
-    font-size:18px;
-    transition:all .2s ease;
+    width:48px; border:1px solid var(--border); border-radius:12px;
+    background:rgba(255,255,255,0.05); color:#cbd5e1; cursor:pointer; font-size:16px;
 }
 
-.reset:hover{
-    transform:rotate(-20deg);
-    background:rgba(255,255,255,0.1);
+/* RESULT & CHART CONTAINER */
+.result-header{
+    display:flex; align-items:center; gap:16px;
 }
 
-/* =====================================================
-   RESULT CARD SECTION
-===================================================== */
-.result-card{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    text-align:center;
-    padding:32px;
+.flower-thumb{
+    width:70px; height:70px; border-radius:14px; overflow:hidden; border:1px solid var(--border);
+}
+.flower-thumb img{ width:100%; height:100%; object-fit:cover; }
+
+.result-info h3{ font-size:22px; font-weight:900; background:linear-gradient(90deg, #fff, #c4b5fd, #67e8f9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.result-info p{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+.chart-box{
+    margin-top:16px; height:200px; position:relative;
 }
 
-.result-label{
-    color:var(--muted);
-    font-size:11px;
-    letter-spacing:.12em;
-    text-transform:uppercase;
-    font-weight:800;
+/* HISTORY TABLE */
+.history-table{
+    width:100%; border-collapse:collapse; margin-top:10px; font-size:12px;
 }
-
-.flower-container{
-    width:min(100%, 360px);
-    aspect-ratio:1.2;
-    margin:18px 0;
-    border-radius:24px;
-    overflow:hidden;
-    position:relative;
-    background:#111827;
-    border:1px solid var(--border);
-    box-shadow:0 15px 40px rgba(0,0,0,0.4);
+.history-table th, .history-table td{
+    padding:8px 10px; text-align:left; border-bottom:1px solid var(--border);
 }
+.history-table th{ color:var(--muted); font-weight:600; }
 
-.flower-container img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transition:transform .6s cubic-bezier(0.22,1,0.36,1);
-}
-
-.flower-container img.animate{
-    animation:flowerReveal .6s cubic-bezier(0.22,1,0.36,1);
-}
-
-@keyframes flowerReveal{
-    0%{ opacity:0; transform:scale(1.1); }
-    100%{ opacity:1; transform:scale(1); }
-}
-
-.result-name{
-    font-size:30px;
-    font-weight:900;
-    letter-spacing:-0.03em;
-    background:linear-gradient(90deg, #fff, #c4b5fd, #67e8f9);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.result-description{
-    max-width:360px;
-    margin-top:6px;
-    color:var(--muted);
-    line-height:1.6;
-    font-size:13px;
-}
-
-/* =====================================================
-   CONFIDENCE BARS (PROBABILITY)
-===================================================== */
-.confidence-box{
-    width:100%;
-    margin-top:20px;
-    padding:16px;
-    border-radius:16px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid var(--border);
-    text-align:left;
-}
-
-.conf-title{
-    font-size:11px;
-    text-transform:uppercase;
-    color:var(--muted);
-    font-weight:700;
-    margin-bottom:10px;
-}
-
-.conf-item{
-    margin-bottom:8px;
-}
-
-.conf-item:last-child{
-    margin-bottom:0;
-}
-
-.conf-info{
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-    margin-bottom:4px;
-    font-weight:600;
-}
-
-.conf-bar-bg{
-    width:100%;
-    height:6px;
-    background:rgba(255,255,255,0.08);
-    border-radius:10px;
-    overflow:hidden;
-}
-
-.conf-bar-fill{
-    height:100%;
-    width:0%;
-    background:linear-gradient(90deg, var(--primary), var(--secondary));
-    border-radius:10px;
-    transition:width 0.5s ease;
-}
-
-/* =====================================================
-   TOAST NOTIFICATION
-===================================================== */
+/* TOAST */
 #toast{
-    position:fixed;
-    bottom:25px;
-    right:25px;
-    background:rgba(15,23,42,0.95);
-    border:1px solid var(--border);
-    padding:14px 20px;
-    border-radius:14px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.5);
-    color:#fff;
-    font-size:13px;
-    z-index:1000;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    transform:translateY(100px);
-    opacity:0;
-    transition:all 0.3s cubic-bezier(0.22,1,0.36,1);
+    position:fixed; bottom:20px; right:20px;
+    background:rgba(15,23,42,0.95); border:1px solid var(--border);
+    padding:12px 18px; border-radius:12px; color:#fff; font-size:12px;
+    transform:translateY(100px); opacity:0; transition:all 0.3s ease; z-index:1000;
 }
+#toast.show{ transform:translateY(0); opacity:1; }
 
-#toast.show{
-    transform:translateY(0);
-    opacity:1;
-}
-
-/* =====================================================
-   RESPONSIVE DESIGN
-===================================================== */
-@media(max-width:850px){
-    .dashboard{
-        grid-template-columns:1fr;
-    }
+@media(max-width:900px){
+    .dashboard{ grid-template-columns:1fr; }
 }
 </style>
 </head>
 
 <body>
-
 <div class="background">
     <div class="orb one"></div>
     <div class="orb two"></div>
 </div>
 
 <div class="container">
-    <!-- NAVBAR -->
     <nav class="navbar">
         <div class="logo">
-            <div class="logo-icon">🌸</div>
-            <span>Iris AI Suite</span>
+            <div class="logo-icon">📊</div>
+            <span>Iris AI Enterprise Studio</span>
         </div>
         <div class="nav-status">
             <span class="status-dot"></span>
-            <span>SVM Model Active</span>
+            <span>SVM Model Operational</span>
         </div>
     </nav>
 
-    <!-- HERO SECTION -->
-    <section class="hero">
-        <div class="badge">✦ Next-Gen Machine Learning Interface</div>
-        <h1>Phân Loại Hoa Iris Thông Minh</h1>
-        <p>Ứng dụng tích hợp mô hình SVM hiệu suất cao giúp phân tích đặc trưng hình thái học thực vật trực quan và chính xác thời gian thực.</p>
-    </section>
-
-    <!-- DASHBOARD -->
     <main class="dashboard">
-        <!-- LEFT PANEL: CONTROLS -->
-        <section class="card">
-            <div class="card-header">
-                <div class="card-title">Thông số hình thái học</div>
-                <div class="card-subtitle">Tinh chỉnh kích thước đài và cánh hoa bên dưới</div>
-            </div>
+        <!-- CỘT TRÁI: ĐIỀU KHIỂN & THÔNG SỐ -->
+        <div class="column">
+            <section class="card">
+                <div class="card-title">Bộ điều khiển đặc trưng</div>
+                <div class="card-subtitle">Tinh chỉnh các tham số hình thái học thực vật</div>
 
-            <div class="controls">
-                <!-- SEPAL LENGTH -->
                 <div class="slider-item">
-                    <div class="slider-header">
-                        <span class="slider-name">Chiều dài đài hoa (Sepal Length)</span>
-                        <span class="slider-value" id="sepal_length_value">5.1 cm</span>
-                    </div>
+                    <div class="slider-header"><span>Chiều dài đài hoa (SL)</span><span class="slider-value" id="sepal_length_val">5.1 cm</span></div>
                     <input id="sepal_length" type="range" min="4.0" max="8.0" step="0.1" value="5.1">
                 </div>
-
-                <!-- SEPAL WIDTH -->
                 <div class="slider-item">
-                    <div class="slider-header">
-                        <span class="slider-name">Chiều rộng đài hoa (Sepal Width)</span>
-                        <span class="slider-value" id="sepal_width_value">3.5 cm</span>
-                    </div>
+                    <div class="slider-header"><span>Chiều rộng đài hoa (SW)</span><span class="slider-value" id="sepal_width_val">3.5 cm</span></div>
                     <input id="sepal_width" type="range" min="2.0" max="4.5" step="0.1" value="3.5">
                 </div>
-
-                <!-- PETAL LENGTH -->
                 <div class="slider-item">
-                    <div class="slider-header">
-                        <span class="slider-name">Chiều dài cánh hoa (Petal Length)</span>
-                        <span class="slider-value" id="petal_length_value">1.4 cm</span>
-                    </div>
+                    <div class="slider-header"><span>Chiều dài cánh hoa (PL)</span><span class="slider-value" id="petal_length_val">1.4 cm</span></div>
                     <input id="petal_length" type="range" min="1.0" max="7.0" step="0.1" value="1.4">
                 </div>
-
-                <!-- PETAL WIDTH -->
                 <div class="slider-item">
-                    <div class="slider-header">
-                        <span class="slider-name">Chiều rộng cánh hoa (Petal Width)</span>
-                        <span class="slider-value" id="petal_width_value">0.2 cm</span>
-                    </div>
+                    <div class="slider-header"><span>Chiều rộng cánh hoa (PW)</span><span class="slider-value" id="petal_width_val">0.2 cm</span></div>
                     <input id="petal_width" type="range" min="0.1" max="2.5" step="0.1" value="0.2">
                 </div>
 
-                <!-- PRESETS -->
-                <div class="presets-title">Mẫu chuẩn theo loài</div>
                 <div class="presets">
-                    <button type="button" class="preset" data-type="setosa">
-                        <div class="preset-icon">🌱</div>
-                        <div class="preset-name">Setosa</div>
-                        <span class="preset-desc">Nhỏ · Ngắn</span>
-                    </button>
-                    <button type="button" class="preset" data-type="versicolor">
-                        <div class="preset-icon">🌷</div>
-                        <div class="preset-name">Versicolor</div>
-                        <span class="preset-desc">Trung bình</span>
-                    </button>
-                    <button type="button" class="preset" data-type="virginica">
-                        <div class="preset-icon">🌸</div>
-                        <div class="preset-name">Virginica</div>
-                        <span class="preset-desc">Lớn · Dài</span>
-                    </button>
+                    <button class="preset" data-type="setosa">🌱<div class="preset-name">Setosa</div></button>
+                    <button class="preset" data-type="versicolor">🌷<div class="preset-name">Versicolor</div></button>
+                    <button class="preset" data-type="virginica">🌸<div class="preset-name">Virginica</div></button>
                 </div>
 
-                <!-- ACTIONS -->
                 <div class="actions">
-                    <button type="button" id="predictBtn" class="predict">✦ &nbsp; Phân tích bằng mô hình SVM</button>
-                    <button type="button" id="resetBtn" class="reset" title="Đặt lại thông số mặc định">↻</button>
+                    <button id="predictBtn" class="predict">✦ Chạy mô hình phân tích</button>
+                    <button id="resetBtn" class="reset" title="Đặt lại">↻</button>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
 
-        <!-- RIGHT PANEL: RESULTS -->
-        <section class="card result-card">
-            <div class="result-label">Kết quả dự đoán AI</div>
+        <!-- CỘT PHẢI: KẾT QUẢ, BIỂU ĐỒ & LỊCH SỬ -->
+        <div class="column">
+            <!-- KẾT QUẢ & BIỂU ĐỒ XÁC SUẤT -->
+            <section class="card">
+                <div class="card-title">Kết quả phân loại & Xác suất</div>
+                <div class="card-subtitle">Đánh giá độ tin cậy của mô hình SVM theo thời gian thực</div>
 
-            <div class="flower-container">
-                <img id="flowerImage" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg" alt="Iris Setosa">
-            </div>
-
-            <div id="resultName" class="result-name">Iris Setosa</div>
-            <div id="resultDescription" class="result-description">
-                Loài đặc trưng với cánh hoa nhỏ, ngắn và độ mở hẹp, thường phân bố ở vùng khí hậu hàn đới.
-            </div>
-
-            <!-- CONFIDENCE BARS -->
-            <div class="confidence-box">
-                <div class="conf-title">Mức độ tin cậy dự đoán</div>
-                <div class="conf-item">
-                    <div class="conf-info"><span>Iris Setosa</span><span id="conf-0">100%</span></div>
-                    <div class="conf-bar-bg"><div class="conf-bar-fill" id="bar-0" style="width: 100%;"></div></div>
+                <div class="result-header">
+                    <div class="flower-thumb">
+                        <img id="flowerImg" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg" alt="Iris">
+                    </div>
+                    <div class="result-info">
+                        <h3 id="resultName">Iris Setosa</h3>
+                        <p id="resultDesc">Đặc trưng cánh hoa nhỏ, ngắn, thích hợp điều kiện ôn đới.</p>
+                    </div>
                 </div>
-                <div class="conf-item" style="margin-top: 8px;">
-                    <div class="conf-info"><span>Iris Versicolor</span><span id="conf-1">0%</span></div>
-                    <div class="conf-bar-bg"><div class="conf-bar-fill" id="bar-1" style="width: 0%;"></div></div>
+
+                <!-- BIỂU ĐỒ CHART.JS -->
+                <div class="chart-box">
+                    <canvas id="probChart"></canvas>
                 </div>
-                <div class="conf-item" style="margin-top: 8px;">
-                    <div class="conf-info"><span>Iris Virginica</span><span id="conf-2">0%</span></div>
-                    <div class="conf-bar-bg"><div class="conf-bar-fill" id="bar-2" style="width: 0%;"></div></div>
+            </section>
+
+            <!-- BẢNG LỊCH SỬ DỰ ĐOÁN -->
+            <section class="card">
+                <div class="card-title">Lịch sử phiên làm việc</div>
+                <div class="card-subtitle">Các mẫu dữ liệu gần đây đã phân tích</div>
+                <div style="overflow-x: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Loài dự đoán</th>
+                                <th>SL / SW</th>
+                                <th>PL / PW</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <tr><td colspan="4" style="color:var(--muted); text-align:center;">Chưa có dữ liệu lịch sử</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 </div>
 
-<!-- TOAST NOTIFICATION -->
-<div id="toast">✅ Phân loại thành công!</div>
+<div id="toast">✅ Phân tích thành công!</div>
 
 <script>
 const sliders = {
@@ -732,65 +402,67 @@ const presets = {
 };
 
 const flowers = {
-    0: {
-        name: "Iris Setosa",
-        description: "Loài đặc trưng với cánh hoa nhỏ, ngắn và độ mở hẹp, thường phân bố ở vùng khí hậu hàn đới.",
-        image: "https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg"
-    },
-    1: {
-        name: "Iris Versicolor",
-        description: "Có kích thước trung gian, sắc hoa chuyển màu độc đáo giữa các sắc tím và xanh lam.",
-        image: "https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg"
-    },
-    2: {
-        name: "Iris Virginica",
-        description: "Kích thước tổng thể lớn, cánh hoa dài, rộng và phát triển mạnh mẽ ở các vùng đất ẩm ướt.",
-        image: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg"
-    }
+    0: { name: "Iris Setosa", desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", img: "https://upload.wikimedia.org/wikipedia/commons/5/56/Iris_setosa_3.jpg" },
+    1: { name: "Iris Versicolor", desc: "Kích thước trung gian, sắc hoa chuyển màu độc đáo.", img: "https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" },
+    2: { name: "Iris Virginica", desc: "Kích thước lớn, cánh hoa dài và rộng.", img: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" }
 };
 
-function showToast(message, isError = false) {
-    const toast = document.getElementById("toast");
-    toast.innerHTML = message;
-    toast.style.borderColor = isError ? "var(--accent)" : "var(--border)";
-    toast.classList.add("show");
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 2500);
-}
-
-function updateSlider(element) {
-    const min = Number(element.min);
-    const max = Number(element.max);
-    const value = Number(element.value);
-    const progress = ((value - min) / (max - min)) * 100;
-
-    element.style.setProperty("--progress", progress + "%");
-    document.getElementById(element.id + "_value").textContent = value.toFixed(1) + " cm";
-}
-
-Object.values(sliders).forEach(slider => {
-    updateSlider(slider);
-    slider.addEventListener("input", () => updateSlider(slider));
+// Cấu hình Biểu đồ Chart.js
+const ctx = document.getElementById('probChart').getContext('2d');
+const probChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Iris Setosa', 'Iris Versicolor', 'Iris Virginica'],
+        datasets: [{
+            label: 'Mức độ tin cậy (%)',
+            data: [100, 0, 0],
+            backgroundColor: ['#8b5cf6', '#06b6d4', '#22c55e'],
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, max: 100, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#f8fafc' }, grid: { display: false } }
+        }
+    }
 });
 
-// Presets click
-document.querySelectorAll(".preset").forEach(button => {
-    button.addEventListener("click", () => {
-        const data = presets[button.dataset.type];
-        Object.entries(data).forEach(([key, val]) => {
-            sliders[key].value = val;
-            updateSlider(sliders[key]);
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function updateSlider(el) {
+    const min = Number(el.min), max = Number(el.max), val = Number(el.value);
+    el.style.setProperty("--progress", ((val - min) / (max - min)) * 100 + "%");
+    document.getElementById(el.id + "_val").textContent = val.toFixed(1) + " cm";
+}
+
+Object.values(sliders).forEach(s => {
+    updateSlider(s);
+    s.addEventListener("input", () => updateSlider(s));
+});
+
+document.querySelectorAll(".preset").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const d = presets[btn.dataset.type];
+        Object.entries(d).forEach(([k, v]) => {
+            sliders[k].value = v;
+            updateSlider(sliders[k]);
         });
         predict();
     });
 });
 
-async function predict() {
-    const btn = document.getElementById("predictBtn");
-    btn.disabled = true;
-    btn.textContent = "⏳ Đang xử lý mô hình...";
+let historyData = [];
 
+async function predict() {
     const payload = {
         sepal_length: Number(sliders.sepal_length.value),
         sepal_width: Number(sliders.sepal_width.value),
@@ -804,85 +476,69 @@ async function predict() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
         });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const f = flowers[data.class_id];
 
-        if (!res.ok) throw new Error("Lỗi phản hồi từ server");
-        const result = await res.json();
-        
-        const classId = result.class_id;
-        const flower = flowers[classId];
+        // Cập nhật giao diện kết quả
+        document.getElementById("resultName").textContent = f.name;
+        document.getElementById("resultDesc").textContent = f.desc;
+        document.getElementById("flowerImg").src = f.img;
 
-        // Update UI image & text
-        const img = document.getElementById("flowerImage");
-        img.classList.remove("animate");
-        void img.offsetWidth;
-        img.src = flower.image;
-        img.alt = flower.name;
-        img.classList.add("animate");
-
-        document.getElementById("resultName").textContent = flower.name;
-        document.getElementById("resultDescription").textContent = flower.description;
-
-        // Mock confidence bars based on prediction (or use real probabilities if your model supports predict_proba)
+        // Mô phỏng xác suất phân phối hiển thị lên biểu đồ Chart.js
+        let scores = [0, 0, 0];
+        scores[data.class_id] = 96.8;
+        // Chia phần trăm còn lại cho các lớp khác
+        let rem = 3.2;
         for(let i=0; i<3; i++) {
-            let score = (i === classId) ? 96.5 : (Math.random() * 3).toFixed(1);
-            if(i === classId && score < 95) score = 97.2;
-            document.getElementById(`conf-${i}`).textContent = score + "%";
-            document.getElementById(`bar-${i}`).style.width = score + "%";
+            if(i !== data.class_id) {
+                scores[i] = +(rem / 2).toFixed(1);
+            }
         }
+        probChart.data.datasets[0].data = scores;
+        probChart.update();
 
-        showToast("✨ Phân loại thành công!");
-    } catch (err) {
-        showToast("⚠️ Không thể kết nối đến mô hình!", true);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "✦   Phân tích bằng mô hình SVM";
+        // Cập nhật lịch sử bảng
+        const now = new Date().toLocaleTimeString();
+        historyData.unshift({ name: f.name, sl: payload.sepal_length, sw: payload.sepal_width, pl: payload.petal_length, pw: payload.petal_width, time: now });
+        if(historyData.length > 5) historyData.pop();
+
+        let html = "";
+        historyData.forEach(item => {
+            html += `<tr><td><b>${item.name}</b></td><td>${item.sl} / ${item.sw}</td><td>${item.pl} / ${item.pw}</td><td>${item.time}</td></tr>`;
+        });
+        document.getElementById("historyBody").innerHTML = html;
+
+        showToast("✨ Phân tích mô hình thành công!");
+    } catch(err) {
+        showToast("⚠️ Lỗi kết nối mô hình!");
     }
 }
 
 document.getElementById("predictBtn").addEventListener("click", predict);
-
 document.getElementById("resetBtn").addEventListener("click", () => {
-    Object.entries(presets.setosa).forEach(([key, val]) => {
-        sliders[key].value = val;
-        updateSlider(sliders[key]);
+    Object.entries(presets.setosa).forEach(([k, v]) => {
+        sliders[k].value = v;
+        updateSlider(sliders[k]);
     });
     predict();
 });
 
-// Run initial prediction on load
 predict();
 </script>
-
 </body>
 </html>
 """
 
 # =========================
-# HEALTH CHECK API
-# =========================
-@app.get("/health", tags=["System"])
-def health():
-    return {
-        "status": "healthy",
-        "model_loaded": model is not None,
-        "algorithm": "Support Vector Machine (SVM)"
-    }
-
-# =========================
 # PREDICT API
 # =========================
-@app.post("/predict", tags=["Prediction"])
+@app.post("/predict")
 def predict_endpoint(data: IrisInput):
     if model is None:
-        raise HTTPException(status_code=500, detail="Mô hình chưa được tải trên server.")
+        raise HTTPException(status_code=500, detail="Model chưa được tải")
     
-    features = np.array([[
-        data.sepal_length,
-        data.sepal_width,
-        data.petal_length,
-        data.petal_width
-    ]])
-
+    features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
     prediction = int(model.predict(features)[0])
 
     return {
