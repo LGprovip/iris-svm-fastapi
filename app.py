@@ -15,8 +15,8 @@ except Exception as e:
 
 app = FastAPI(
     title="Iris AI Quantum Studio",
-    description="Nền tảng phân tích AI cao cấp tích hợp đa biểu đồ, tùy biến Theme và xuất dữ liệu thời gian thực.",
-    version="4.1.0"
+    description="Nền tảng phân tích AI cao cấp tích hợp hình ảnh thực tế, đa biểu đồ và tùy biến Theme.",
+    version="4.2.0"
 )
 
 class IrisInput(BaseModel):
@@ -403,16 +403,25 @@ input[type="range"]::-webkit-slider-thumb:hover{
     background:rgba(0,0,0,0.2);
 }
 
-.flower-icon-box{
-    width:68px;
-    height:68px;
+.flower-img-box{
+    width:72px;
+    height:72px;
     border-radius:12px;
-    display:grid;
-    place-items:center;
-    font-size:32px;
+    overflow:hidden;
     border:1px solid var(--border);
-    background:rgba(255,255,255,0.03);
     flex-shrink:0;
+    background:#111827;
+}
+
+.flower-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.flower-img-box img:hover {
+    transform: scale(1.1);
 }
 
 .result-meta h3{
@@ -517,7 +526,7 @@ input[type="range"]::-webkit-slider-thumb:hover{
     <nav class="navbar">
         <div class="logo">
             <div class="logo-badge">⚡</div>
-            <span>Iris AI Quantum Studio <small style="color:var(--primary); font-weight:500;">v4.1</small></span>
+            <span>Iris AI Quantum Studio <small style="color:var(--primary); font-weight:500;">v4.3</small></span>
         </div>
         <div class="nav-right">
             <div class="theme-switcher">
@@ -593,7 +602,9 @@ input[type="range"]::-webkit-slider-thumb:hover{
                 <div class="card-desc">Độ tin cậy từ thuật toán Support Vector Machine</div>
 
                 <div class="result-box">
-                    <div class="flower-icon-box" id="flowerIcon">🌱</div>
+                    <div class="flower-img-box">
+                        <img id="flowerImg" src="https://images.unsplash.com/photo-1561564757-d6d1d293e449?auto=format&fit=crop&w=300&q=80" alt="Iris Real Photo">
+                    </div>
                     <div class="result-meta">
                         <h3 id="resultName">Iris Setosa</h3>
                         <p id="resultDesc">Đặc trưng cánh hoa nhỏ, ngắn, thích hợp điều kiện ôn đới.</p>
@@ -657,10 +668,23 @@ const presets = {
     virginica: { sepal_length: 6.5, sepal_width: 3.0, petal_length: 5.5, petal_width: 1.8 }
 };
 
+// Sử dụng hình ảnh thực tế ngoài đời từ kho ảnh chất lượng cao
 const flowers = {
-    0: { name: "Iris Setosa", desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", icon: "🌱" },
-    1: { name: "Iris Versicolor", desc: "Kích thước trung gian, màu sắc chuyển biến tinh tế.", icon: "🌷" },
-    2: { name: "Iris Virginica", desc: "Kích thước lớn nhất, cánh hoa rộng và dài.", icon: "🌸" }
+    0: { 
+        name: "Iris Setosa", 
+        desc: "Cánh hoa nhỏ, ngắn và độ mở hẹp.", 
+        img: "https://images.unsplash.com/photo-1561564757-d6d1d293e449?auto=format&fit=crop&w=300&q=80" 
+    },
+    1: { 
+        name: "Iris Versicolor", 
+        desc: "Kích thước trung gian, màu sắc chuyển biến tinh tế.", 
+        img: "https://images.unsplash.com/photo-1582885996996-e3491ed1b56c?auto=format&fit=crop&w=300&q=80" 
+    },
+    2: { 
+        name: "Iris Virginica", 
+        desc: "Kích thước lớn nhất, cánh hoa rộng và dài.", 
+        img: "https://images.unsplash.com/photo-1621307641215-28ddc8702f23?auto=format&fit=crop&w=300&q=80" 
+    }
 };
 
 const barCtx = document.getElementById('barChart').getContext('2d');
@@ -780,7 +804,7 @@ async function runPrediction() {
 
         document.getElementById("resultName").textContent = f.name;
         document.getElementById("resultDesc").textContent = f.desc;
-        document.getElementById("flowerIcon").textContent = f.icon;
+        document.getElementById("flowerImg").src = f.img;
 
         let scores = [0, 0, 0];
         scores[data.class_id] = 98.2;
